@@ -34,6 +34,8 @@ const PHRASES = {
     'Last set. Shoulders back, chin up, finish like you mean it.',
     'One more set. A cat stretches before she leaps. You\'ve stretched. Leap.',
     'Last set. The outfit you\'re saving for is waiting. Earn it.',
+    'Last set. Every hard set makes you a little prettier and a lot stronger.',
+    'One set left. Pretty girls finish their sets too. Go.',
   ],
 
   // When every set of an exercise is done
@@ -66,6 +68,8 @@ const PHRASES = {
     'Done. That one shows up in how you walk into a room. Keep going.',
     '{exercise} done. Firm, strong, and nowhere near finished. Next.',
     'Done. Shape is built on the days you don\'t feel like it. Keep moving.',
+    '{exercise} done. Strong is the prettiest thing you can be. Next.',
+    'Done. That glow you\'re getting is earned right here. Keep moving.',
   ],
 
   // When the whole workout is finished
@@ -88,6 +92,8 @@ const PHRASES = {
     'Every workout shows a little more. Be proud of how far you\'ve come.',
     'Good girl. That little black dress is going to look even better on you.',
     'Graceful and strong, like a cat. Lovely work today, girl.',
+    'Good girl. You get prettier every time you show up for yourself.',
+    'That post-workout glow suits you, girl. Rest well.',
   ],
 
   // Lower body: when only one set is left on a leg or glute exercise
@@ -111,6 +117,8 @@ const PHRASES = {
     'Last set. Every hard rep adds a little more strength and shape.',
     'One set left. Move like a panther, push like you\'re hunting.',
     'Last set. Swimsuit season starts right now.',
+    'Last set. Pretty legs are strong legs. Finish it.',
+    'One set left. A cat is pretty because she\'s strong. Same goes for you. Push.',
   ],
 
   // Lower body: when a leg or glute exercise is done
@@ -137,6 +145,8 @@ const PHRASES = {
     'Done. The shape you came here for is taking form. Next one.',
     '{exercise} done. Your silhouette is changing. Keep pushing.',
     'Done. Skirts, dresses, swimsuits. You\'re building for all of them. Next.',
+    '{exercise} done. Your legs get prettier with every set like that. Next.',
+    'Done. Strong legs, pretty legs. Same thing. Keep going.',
   ],
 
   // Lower body: after a workout that included leg or glute exercises
@@ -153,5 +163,7 @@ const PHRASES = {
     'Good girl. Your favourite jeans will fit better every week.',
     'Every leg day is shaping your silhouette. Be proud of today.',
     'Strong legs, the graceful kind a cat would be proud of. Good work, girl.',
+    'Good girl. Your legs are getting prettier every week.',
+    'Pretty and strong, like a cat stretching in the sun. Lovely work today.',
   ],
 };
