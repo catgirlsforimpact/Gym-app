@@ -2,7 +2,7 @@
 // {exercise} is replaced with the exercise name where it appears.
 // Tone: during the workout, tough love. After the workout, softer and encouraging.
 // The "...Legs" pools are for lower-body growth. They are used (about half the time)
-// for Legs and Glutes exercises, and after workouts that included them.
+// for every lower-body exercise (legs, glutes, hips, deadlifts), and after workouts that included one.
 const PHRASES = {
   // When only one set is left on an exercise
   oneSetLeft: [
@@ -46,25 +46,26 @@ const PHRASES = {
     'Sweat today, glow tomorrow.',
     'She believed she could, so she did. Great work today.',
     'Hard work looks good on you. Workout complete.',
-    'You kept a promise to yourself today. That matters.',
+    'Good girl. You kept a promise to yourself today.',
     'Every session counts, and this one is in the books. Be proud, girl.',
     'Done. Go easy on yourself now. Recovery is part of the work.',
-    'You showed up, and that\'s the hardest part. Well done.',
+    'Good girl. You showed up, and that\'s the hardest part.',
     'Small steps, every week. You\'re getting there, girl.',
     'Stretch, eat well, curl up somewhere warm. Great session.',
     'Nine lives, one goal, and you showed up for it today.',
     'Soft paws, strong legs. Good work today.',
+    'Good girl. Rest now, you earned it.',
   ],
 
   // Lower body: when only one set is left on a leg or glute exercise
   oneSetLeftLegs: [
     'Last set. Glutes don\'t grow in the comfort zone.',
     'One more set. Those legs won\'t build themselves, girl.',
-    'Final set of {exercise}. Drive through your heels and finish it.',
     'Last set. Every rep is building the lower body you want.',
     'One set left. Growth starts where it gets uncomfortable.',
-    'One set left. Strong cat legs are earned, not given.',
     'Sink low like a cat about to pounce. Last set.',
+    'Last set. This is how you build the shape you want.',
+    'One more set. The legs you want are on the other side of it.',
   ],
 
   // Lower body: when a leg or glute exercise is done
@@ -75,15 +76,18 @@ const PHRASES = {
     'Another brick in the lower body you\'re building. Keep going.',
     '{exercise} done. Don\'t go easy on the next one.',
     'Panther legs are built on days like this. Next.',
+    '{exercise} done. You\'ll see this one in the mirror. Next.',
+    'Done. Every set is shaping the body you\'re after. Keep going.',
   ],
 
   // Lower body: after a workout that included leg or glute exercises
   workoutDoneLegs: [
     'Your lower body is growing, one session at a time. Great work today.',
     'Eat well and sleep well tonight. That\'s when your legs and glutes grow.',
-    'Every squat and every hip thrust adds up. Be proud of today, girl.',
     'Strong legs carry you everywhere. Good work building them today.',
-    'If you walk a little funny tomorrow, wear it proudly. Great leg day.',
-    'Strong haunches, soft heart. Great work today, girl.',
+    'Good girl. Your glutes will thank you for today.',
+    'Good girl. Keep showing up like this and you\'ll see it in the mirror.',
+    'Good girl. Every session like this shapes the body you\'re working for.',
+    'Rest up, girl. This is how stronger, rounder glutes are made.',
   ],
 };

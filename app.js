@@ -115,8 +115,14 @@ function toast(msg, ms = 1800, cls = '') {
 
 /* ---------- Motivation ---------- */
 const lastPhrase = {};
-const LOWER_BODY_GROUPS = ['Legs', 'Glutes'];
-const isLowerBody = exerciseId => LOWER_BODY_GROUPS.includes(exById(exerciseId)?.group);
+// Lower body = any leg, glute or hip group (built-in or your own, e.g. "Quads", "Hamstrings"),
+// plus deadlifts, which sit under Back but mostly train glutes and hamstrings.
+const LOWER_BODY_GROUP = /leg|glute|quad|hamstring|calf|calves|hip|adduct|abduct|lower/i;
+const LOWER_BODY_IDS = ['deadlift', 'sumo-deadlift', 'rdl', 'single-leg-rdl', 'good-morning'];
+const isLowerBody = exerciseId => {
+  const ex = exById(exerciseId);
+  return !!ex && (LOWER_BODY_IDS.includes(ex.id) || LOWER_BODY_GROUP.test(ex.group || ''));
+};
 
 // Random phrase from a pool, never the same one twice in a row.
 // For lower-body work, half the time it picks from the matching "...Legs" pool instead.
