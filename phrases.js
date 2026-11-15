@@ -34,7 +34,6 @@ const PHRASES = {
     'Last set. Shoulders back, chin up, finish like you mean it.',
     'One more set. A cat stretches before she leaps. You\'ve stretched. Leap.',
     'Last set. The outfit you\'re saving for is waiting. Earn it.',
-    'Last set. Every hard set makes you a little prettier and a lot stronger.',
     'One set left. Pretty girls finish their sets too. Go.',
   ],
 
@@ -145,7 +144,6 @@ const PHRASES = {
     'Done. The shape you came here for is taking form. Next one.',
     '{exercise} done. Your silhouette is changing. Keep pushing.',
     'Done. Skirts, dresses, swimsuits. You\'re building for all of them. Next.',
-    '{exercise} done. Your legs get prettier with every set like that. Next.',
     'Done. Strong legs, pretty legs. Same thing. Keep going.',
   ],
 
@@ -163,7 +161,6 @@ const PHRASES = {
     'Good girl. Your favourite jeans will fit better every week.',
     'Every leg day is shaping your silhouette. Be proud of today.',
     'Strong legs, the graceful kind a cat would be proud of. Good work, girl.',
-    'Good girl. Your legs are getting prettier every week.',
     'Pretty and strong, like a cat stretching in the sun. Lovely work today.',
   ],
 };
