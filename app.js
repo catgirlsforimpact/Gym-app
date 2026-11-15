@@ -254,7 +254,7 @@ function checkExerciseMilestone(i) {
   const status = kind && `${kind}:${total}`;
   if (!kind || celebrated[key] === status) return;
   celebrated[key] = status;
-  toast(phrase(kind, { exercise: exById(en.exerciseId)?.name || 'that' }, isLowerBody(en.exerciseId)), 5000, 'motivate');
+  toast(phrase(kind, { exercise: exById(en.exerciseId)?.name || 'that' }, isLowerBody(en.exerciseId)), 6500, 'motivate');
 }
 
 /* ---------- Charts (tiny SVG, no deps) ---------- */
