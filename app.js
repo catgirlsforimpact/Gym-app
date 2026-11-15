@@ -284,17 +284,85 @@ function lineChart(points, { height = 170, unit = '', emptyText = null } = {}) {
   </svg>`;
 }
 
-function barChart(bars, { height = 120 } = {}) {
+function barChart(bars, { height = 120, label = 'Workouts per week', format = v => v } = {}) {
   const W = 360, H = height, pb = 20, pt = 8;
   const max = Math.max(1, ...bars.map(b => b.v));
   const bw = W / bars.length;
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Workouts per week">
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">
     ${bars.map((b, i) => {
       const h = b.v ? Math.max(4, (b.v / max) * (H - pb - pt)) : 3;
-      return `<rect class="bar ${b.v ? '' : 'zero'}" x="${i * bw + bw * 0.2}" y="${H - pb - h}" width="${bw * 0.6}" height="${h}" rx="3"><title>${esc(b.label)}: ${b.v}</title></rect>
+      return `<rect class="bar ${b.v ? '' : 'zero'}" x="${i * bw + bw * 0.2}" y="${H - pb - h}" width="${bw * 0.6}" height="${h}" rx="3"><title>${esc(b.label)}: ${esc(format(b.v))}</title></rect>
         ${i % 2 === bars.length % 2 ? '' : `<text class="lbl" x="${i * bw + bw / 2}" y="${H - 5}" text-anchor="middle">${esc(b.label)}</text>`}`;
     }).join('')}
   </svg>`;
+}
+
+/* ---------- Progress statistics ---------- */
+const DAY = 864e5;
+const daysAgo = n => new Date(Date.now() - n * DAY);
+const byDate = (a, b) => new Date(a.date) - new Date(b.date);
+
+// Sets per muscle in the last 7 days. The main muscle counts a full set,
+// helper muscles half a set (a common way to count weekly volume).
+function setsPerMuscle(days = 7) {
+  const since = daysAgo(days), out = {};
+  state.workouts.filter(w => new Date(w.date) >= since).forEach(w => w.entries.forEach(en => {
+    const ex = exById(en.exerciseId); if (!ex) return;
+    const n = en.sets.length;
+    exGroups(ex).forEach((g, i) => { out[g] = (out[g] || 0) + (i === 0 ? n : n / 2); });
+  }));
+  return out;
+}
+
+// Personal records over time: a session beats your previous best for that exercise.
+// Weighted lifts compare estimated 1-rep max; bodyweight and timed work compare reps/seconds.
+function personalRecords() {
+  const best = {}, prs = [];
+  [...state.workouts].sort(byDate).forEach(w => w.entries.forEach(en => {
+    const sets = en.sets.filter(x => num(x.r) > 0);
+    if (!sets.length) return;
+    const weighted = sets.some(x => num(x.w) > 0);
+    let top = null, score = 0;
+    sets.forEach(x => {
+      const v = weighted ? e1rm(num(x.w), num(x.r)) : num(x.r);
+      if (v > score) { score = v; top = x; }
+    });
+    const key = en.exerciseId + (weighted ? '' : ':bw');
+    const prev = best[key];
+    if (prev !== undefined && score > prev + 1e-9) prs.push({ exerciseId: en.exerciseId, date: w.date, w: num(top.w), r: num(top.r), weighted, gain: score - prev });
+    if (prev === undefined || score > prev) best[key] = score;
+  }));
+  return prs.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+// Biggest strength gains over the last 8 weeks: first session vs your best session since
+// (estimated 1-rep max, weighted lifts). Using the best avoids a light day hiding progress.
+function mostImproved(limit = 3) {
+  const since = daysAgo(56);
+  return state.exercises.map(ex => {
+    const h = exerciseHistory(ex.id).filter(x => new Date(x.date) >= since && x.best1rm > 0);
+    if (h.length < 2) return null;
+    const first = h[0].best1rm, top = Math.max(...h.slice(1).map(x => x.best1rm));
+    const pct = (top - first) / first * 100;
+    return pct > 0.5 ? { ex, pct, from: first, to: top, sessions: h.length } : null;
+  }).filter(Boolean).sort((a, b) => b.pct - a.pct).slice(0, limit);
+}
+
+// Average workouts per week and workout length over the last 8 weeks.
+function consistency() {
+  const since = daysAgo(56);
+  const recent = state.workouts.filter(w => new Date(w.date) >= since);
+  const firstEver = state.workouts.length ? Math.min(...state.workouts.map(w => +new Date(w.date))) : Date.now();
+  const weeks = Math.max(1, Math.min(8, (Date.now() - Math.max(+since, firstEver)) / (7 * DAY)));
+  const durations = recent.map(w => w.duration).filter(d => d > 60e3 && d < 5 * 3600e3);
+  const last = state.workouts.length ? Math.max(...state.workouts.map(w => +new Date(w.date))) : null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const lastDay = last ? new Date(last) : null; lastDay?.setHours(0, 0, 0, 0);
+  return {
+    perWeek: Math.round(recent.length / weeks * 10) / 10,
+    avgMin: durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length / 60e3) : null,
+    daysSince: lastDay ? Math.round((today - lastDay) / DAY) : null,
+  };
 }
 
 /* ---------- Navigation ---------- */
@@ -980,6 +1048,60 @@ afterRender.exercises = () => {
 
 /* ---------- Progress ---------- */
 let progressEx = null;
+let progressChart = 'workouts'; // weekly chart: workouts | sets | volume
+
+function muscleSection() {
+  const sets = setsPerMuscle(7);
+  const groups = allGroups().filter(g => sets[g] > 0).sort((a, b) => sets[b] - sets[a]);
+  const lower = ['Glutes', 'Quads', 'Hamstrings', 'Calves', 'Adductors'];
+  const rows = groups.map(g => {
+    const v = Math.round(sets[g] * 2) / 2;
+    const pct = Math.min(100, v / 20 * 100);
+    const zone = v >= 20 ? 'high' : v >= 10 ? 'good' : 'low';
+    return `<div class="mrow">
+      <span class="mname">${esc(g)}${lower.includes(g) ? '' : ''}</span>
+      <span class="mbar"><span class="mband"></span><span class="mfill ${zone}" style="width:${pct}%"></span></span>
+      <span class="mval">${fmt(v)}</span>
+    </div>`;
+  }).join('');
+  return `<div class="label">Sets per muscle · last 7 days</div>
+    <div class="card">
+      ${rows || '<div class="muted small">No sets in the last 7 days yet.</div>'}
+      <div class="small muted" style="margin-top:10px">The shaded part of each bar is 10–20 sets, a common weekly target for growth. The main muscle of an exercise counts a full set, helper muscles half.</div>
+    </div>`;
+}
+
+function prSection() {
+  const prs = personalRecords();
+  const month = prs.filter(p => new Date(p.date) >= daysAgo(30)).length;
+  const recent = prs.slice(0, 5);
+  return `<div class="label">Personal records</div>
+    <div class="card">
+      <div class="row between" style="margin-bottom:${recent.length ? 6 : 0}px">
+        <span><b class="pr-count">${month}</b> <span class="muted small">in the last 30 days</span></span>
+        <span class="muted small">${prs.length} in total</span>
+      </div>
+      ${recent.length ? `<div class="list">${recent.map(p => `
+        <button class="list-item" data-act="show-ex" data-id="${esc(p.exerciseId)}">
+          <div style="min-width:0"><div class="title">${esc(exById(p.exerciseId)?.name || 'Exercise')}</div>
+            <div class="sub">${p.weighted ? `${fmt(p.w)} ${state.unit} × ${p.r}` : isTimed(exById(p.exerciseId)) ? `${p.r} seconds` : `${p.r} reps`} · ${esc(relDay(p.date))}</div></div>
+          <span class="pr-gain">+${p.weighted ? fmt(p.gain) + ' ' + state.unit : fmt(p.gain) + (isTimed(exById(p.exerciseId)) ? ' s' : ' reps')}</span>
+        </button>`).join('')}</div>`
+        : '<div class="muted small" style="margin-top:6px">Beat your best on any exercise and it shows up here.</div>'}
+    </div>`;
+}
+
+function improvedSection() {
+  const top = mostImproved(3);
+  if (!top.length) return '';
+  return `<div class="label">Most improved · last 8 weeks</div>
+    <div class="card"><div class="list">${top.map(t => `
+      <button class="list-item" data-act="show-ex" data-id="${esc(t.ex.id)}">
+        <div style="min-width:0"><div class="title">${esc(t.ex.name)}</div>
+          <div class="sub">Estimated 1-rep max ${fmt(t.from)} → best ${fmt(t.to)} ${state.unit}</div></div>
+        <span class="pr-gain">+${Math.round(t.pct)}%</span>
+      </button>`).join('')}</div></div>`;
+}
 
 views.progress = () => {
   const ws = state.workouts;
@@ -989,10 +1111,11 @@ views.progress = () => {
   const thisWeek = weekStart(now);
   const weeks = [];
   for (let i = 11; i >= 0; i--) { const d = new Date(thisWeek); d.setDate(d.getDate() - i * 7); weeks.push(d); }
-  const perWeek = weeks.map(w => {
-    const end = new Date(w); end.setDate(end.getDate() + 7);
-    return { label: w.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }), v: ws.filter(x => { const d = new Date(x.date); return d >= w && d < end; }).length };
-  });
+  const inWeek = w => { const end = new Date(w); end.setDate(end.getDate() + 7); return ws.filter(x => { const d = new Date(x.date); return d >= w && d < end; }); };
+  const weekLabel = w => w.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' });
+  const perWeek = weeks.map(w => ({ label: weekLabel(w), v: inWeek(w).length }));
+  const setsWeek = weeks.map(w => ({ label: weekLabel(w), v: inWeek(w).reduce((t, x) => t + x.entries.reduce((a, en) => a + en.sets.length, 0), 0) }));
+  const volWeek = weeks.map(w => ({ label: weekLabel(w), v: Math.round(inWeek(w).reduce((t, x) => t + workoutVolume(x), 0)) }));
   // Streak = consecutive weeks (ending this or last week) with ≥1 workout
   let streak = 0;
   for (let i = perWeek.length - 1; i >= 0; i--) {
@@ -1000,8 +1123,12 @@ views.progress = () => {
     else if (i === perWeek.length - 1) continue; // current week may not have one yet
     else break;
   }
-  const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 30);
-  const vol30 = ws.filter(w => new Date(w.date) >= monthAgo).reduce((t, w) => t + workoutVolume(w), 0);
+  const cons = consistency();
+  const kfmt = v => v >= 10000 ? fmt(v / 1000) + 'k' : fmt(v);
+  const chart = { workouts: { bars: perWeek, unit: 'workouts', f: v => v }, sets: { bars: setsWeek, unit: 'sets', f: v => v }, volume: { bars: volWeek, unit: state.unit, f: kfmt } }[progressChart] || { bars: perWeek, unit: 'workouts', f: v => v };
+  const firstWorkout = Math.min(...ws.map(w => +new Date(w.date)));
+  const activeWeeks = Math.max(1, weeks.filter(w => +w + 7 * DAY > firstWorkout).length);
+  const avg12 = chart.bars.slice(-activeWeeks).reduce((t, b) => t + b.v, 0) / activeWeeks;
 
   const logged = state.exercises.filter(e => exerciseHistory(e.id).length);
   if (!progressEx || !logged.some(e => e.id === progressEx)) {
@@ -1021,13 +1148,27 @@ views.progress = () => {
       <div class="stat"><div class="v">${c.week}</div><div class="k">This week</div></div>
       <div class="stat"><div class="v">${c.month}</div><div class="k">This month</div></div>
       <div class="stat"><div class="v">${c.year}</div><div class="k">This year</div></div>
-      <div class="stat"><div class="v">${c.total}</div><div class="k">All workouts</div></div>
       <div class="stat"><div class="v">${streak}</div><div class="k">Week streak</div></div>
-      <div class="stat"><div class="v">${vol30 >= 10000 ? fmt(vol30 / 1000) + 'k' : fmt(vol30)}</div><div class="k">${state.unit} lifted · 30d</div></div>
-    </div>`)(workoutCounts(now))}
+      <div class="stat"><div class="v">${fmt(cons.perWeek)}</div><div class="k">Per week · last 8 wks</div></div>
+      <div class="stat"><div class="v">${cons.avgMin != null ? cons.avgMin + '<small> min</small>' : '–'}</div><div class="k">Average workout</div></div>
+    </div>
+    <div class="small muted stats-foot">${c.total} workout${c.total === 1 ? '' : 's'} in total · last one ${cons.daysSince === 0 ? 'today' : cons.daysSince === 1 ? 'yesterday' : cons.daysSince + ' days ago'}</div>`)(workoutCounts(now))}
 
-    <div class="label">Workouts per week</div>
-    <div class="card">${barChart(perWeek)}</div>
+    <div class="label">Every week</div>
+    <div class="seg" style="display:flex">
+      ${[['workouts', 'Workouts'], ['sets', 'Sets'], ['volume', 'Weight lifted']].map(([k, l]) => `<button style="flex:1" class="${progressChart === k ? 'active' : ''}" data-act="progress-chart" data-v="${k}">${l}</button>`).join('')}
+    </div>
+    <div class="card" style="margin-top:10px">
+      <div class="row between small" style="margin-bottom:6px">
+        <span class="muted">This week: <b class="ink">${chart.f(chart.bars[chart.bars.length - 1].v)}</b> ${chart.unit}</span>
+        <span class="muted">${activeWeeks < 12 ? `${activeWeeks}-week` : '12-week'} average: ${chart.f(Math.round(avg12 * 10) / 10)}</span>
+      </div>
+      ${barChart(chart.bars, { label: `${chart.unit} per week`, format: v => `${chart.f(v)} ${chart.unit}` })}
+    </div>
+
+    ${muscleSection()}
+    ${prSection()}
+    ${improvedSection()}
 
     <div class="label">Strength trend</div>
     <select id="progress-ex">
@@ -1356,6 +1497,7 @@ document.addEventListener('click', e => {
     case 'close-sheet': if (!$('#sheet').dataset.dragged) closeSheet(); break;
     case 'start': startWorkout(); break;
     case 'edit-goals': editGoals(); break;
+    case 'progress-chart': progressChart = el.dataset.v; render(); break;
     case 'save-goals': {
       const read = sel => { const v = $(sel).value.trim(); if (!v) return null; const n = parseInt(v, 10); return n > 0 && n < 10000 ? n : NaN; };
       const month = read('#goal-month'), year = read('#goal-year');
