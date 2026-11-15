@@ -329,3 +329,12 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .t-row.moved { animation: t-moved .6s ease-out; }
 @keyframes t-moved { from { background: var(--soft); } to { background: transparent; } }
 @media (prefers-reduced-motion: reduce) { .t-row.moved { animation: none; } }
+
+/* Workout: reorder exercises */
+.entry-tools { display: flex; align-items: center; gap: 12px; }
+.entry-order { display: flex; gap: 4px; }
+.entry-order button { width: 30px; height: 28px; border-radius: 8px; background: var(--soft); color: var(--text); display: grid; place-items: center; }
+.entry-order button:disabled { opacity: .3; cursor: default; }
+.entry.moved { animation: entry-moved .7s ease-out; }
+@keyframes entry-moved { from { box-shadow: 0 0 0 3px var(--accent); } to { box-shadow: 0 0 0 3px transparent; } }
+@media (prefers-reduced-motion: reduce) { .entry.moved { animation: none; } }

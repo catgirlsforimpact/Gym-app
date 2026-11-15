@@ -249,7 +249,8 @@ function checkExerciseMilestone(i) {
   let kind = null;
   if (done === total) kind = 'exerciseDone';
   else if (total >= 2 && done === total - 1) kind = 'oneSetLeft';
-  const key = `${a.id}:${en.exerciseId}:${i}`;
+  en.key ||= uid(); // stays with the exercise when it is moved
+  const key = `${a.id}:${en.key}`;
   const status = kind && `${kind}:${total}`;
   if (!kind || celebrated[key] === status) return;
   celebrated[key] = status;
@@ -356,7 +357,7 @@ views.train = () => {
       <div class="muted small">${fmtDate(a.date, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
     </div>
 
-    ${a.entries.map((en, i) => entryBlock(en, i)).join('') || `<div class="empty">Add your first exercise.</div>`}
+    ${a.entries.map((en, i) => entryBlock(en, i, a.entries.length)).join('') || `<div class="empty">Add your first exercise.</div>`}
 
     <div class="row" style="margin-top:18px">
       <button class="btn ghost" style="flex:1" data-act="add-exercise">+ Add exercise</button>
@@ -436,7 +437,7 @@ function previousNotes(a, limit = 3) {
     .slice(0, limit);
 }
 
-function entryBlock(en, i) {
+function entryBlock(en, i, n = 1) {
   const ex = exById(en.exerciseId) || { name: 'Unknown exercise' };
   const hist = exerciseHistory(en.exerciseId);
   const last = hist[hist.length - 1];
@@ -449,7 +450,15 @@ function entryBlock(en, i) {
     <div class="card entry" data-entry="${i}">
       <div class="entry-head">
         <button class="entry-name" data-act="show-ex" data-id="${esc(en.exerciseId)}">${esc(ex.name)}</button>
-        <button class="link" data-act="remove-entry" data-i="${i}">Remove</button>
+        <div class="entry-tools">
+          ${n > 1 ? `<div class="entry-order">
+            <button data-act="move-entry" data-i="${i}" data-v="-1" aria-label="Move ${esc(ex.name)} up" ${i === 0 ? 'disabled' : ''}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+            <button data-act="move-entry" data-i="${i}" data-v="1" aria-label="Move ${esc(ex.name)} down" ${i === n - 1 ? 'disabled' : ''}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+          </div>` : ''}
+          <button class="link" data-act="remove-entry" data-i="${i}">Remove</button>
+        </div>
       </div>
       <div class="sets-grid">
         <span class="h">Set</span><span class="h" style="text-align:center">${state.unit}</span><span class="h" style="text-align:center">Reps</span><span></span>
@@ -498,7 +507,7 @@ function startWorkout(entries = []) {
 
 function finishWorkout() {
   const a = state.active;
-  a.entries = a.entries.map(en => ({ ...en, sets: en.sets.filter(s => num(s.r) > 0).map(s => ({ w: num(s.w), r: num(s.r) })) }))
+  a.entries = a.entries.map(({ key, ...en }) => ({ ...en, sets: en.sets.filter(s => num(s.r) > 0).map(s => ({ w: num(s.w), r: num(s.r) })) }))
     .filter(en => en.sets.length);
   if (!a.entries.length) { toast('Log at least one set first'); return; }
   // Detect PRs before saving
@@ -1399,6 +1408,16 @@ document.addEventListener('click', e => {
       break;
     }
     case 'remove-set': a.entries[+el.dataset.i].sets.splice(+el.dataset.j, 1); save(); render(); break;
+    case 'move-entry': {
+      const i = +el.dataset.i, j = i + +el.dataset.v;
+      if (j < 0 || j >= a.entries.length) break;
+      a.entries.forEach(en => { en.key ||= uid(); });
+      [a.entries[i], a.entries[j]] = [a.entries[j], a.entries[i]];
+      save(); render();
+      const card = document.querySelector(`[data-entry="${j}"]`);
+      if (card) { card.classList.add('moved'); card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+      break;
+    }
     case 'remove-entry': a.entries.splice(+el.dataset.i, 1); save(); render(); break;
     case 'discard': if (confirm('Discard this workout?')) { state.active = null; state.restEnd = null; renderRest(); save(); render(); } break;
     case 'finish': finishWorkout(); break;

@@ -3,7 +3,7 @@
 A minimal workout tracker. Log exercises, read form tips, track your progress and keep notes.
 
 ## Features
-- **Train**: start a workout, add exercises, log weight × reps per set. It shows what you did last time, and a timer runs while you train. You can also repeat a past workout.
+- **Train**: start a workout, add exercises, log weight × reps per set, and reorder exercises on the day with the arrows on each card. It shows what you did last time, and a timer runs while you train. You can also repeat a past workout.
 - **Progression**: each exercise shows your last session and a target for today. Work in one app-wide rep range (8–13 by default, changeable in Settings): add one rep each time, and once every set reaches the top of the range, the app suggests adding weight (+2.5 kg, or +1 kg for curls, pushdowns and lateral raises) and dropping back to the bottom. **Use** fills in the suggested weights. It's only a suggestion: whatever you type is what gets logged.
 - **Rest timer**: starts on its own when you log a set's reps, or tap **Rest**. Adjust ±15s or skip. It beeps and vibrates when time is up and keeps running if you reload. Choose 1:00, 1:30, 2:00 or 3:00 in Settings, or turn off auto-start.
 - **Earlier notes**: when you start a template (from Train, Plan or Repeat), the notes you wrote the last three times you did it show above today's notes.
