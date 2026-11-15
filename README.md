@@ -34,4 +34,4 @@ Everything is stored in your browser's `localStorage` on the device. Use **Setti
 - `data.js`: built-in exercise library and form tips
 - `phrases.js`: motivational phrases
 - `sw.js`, `manifest.json`: installable / offline support
-- `icon.svg`, `icon-*.png`: app icon (pink kettlebell with cat ears)
+- `icon.svg`, `icon-*.png`: app icon (light pink dumbbell on white)

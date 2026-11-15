@@ -1,24 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fdf2f5"/>
-      <stop offset="1" stop-color="#f7dbe5"/>
-    </linearGradient>
-    <linearGradient id="bell" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#c85a7e"/>
-      <stop offset="1" stop-color="#a63c60"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- cat ears on the handle's top corners -->
-  <path d="M168 150 L166 78 L224 112 Z" fill="#c85a7e" stroke="#c85a7e" stroke-width="12" stroke-linejoin="round"/>
-  <path d="M344 150 L346 78 L288 112 Z" fill="#c85a7e" stroke="#c85a7e" stroke-width="12" stroke-linejoin="round"/>
-  <!-- handle: a rounded arch with a clear opening -->
-  <path d="M170 262 L170 176 Q170 116 230 116 L282 116 Q342 116 342 176 L342 262" fill="none" stroke="#c85a7e" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- body -->
-  <circle cx="256" cy="320" r="118" fill="url(#bell)"/>
-  <!-- flat base -->
-  <rect x="186" y="408" width="140" height="30" rx="12" fill="#a63c60"/>
-  <!-- soft highlight -->
-  <ellipse cx="212" cy="290" rx="24" ry="38" fill="#ffffff" opacity=".2" transform="rotate(-25 212 290)"/>
+  <rect width="512" height="512" rx="112" fill="#ffffff"/>
+  <g fill="#f0a3bb">
+    <rect x="150" y="240" width="212" height="32" rx="10"/>
+    <rect x="116" y="176" width="46" height="160" rx="16"/>
+    <rect x="350" y="176" width="46" height="160" rx="16"/>
+    <rect x="76" y="206" width="36" height="100" rx="13"/>
+    <rect x="400" y="206" width="36" height="100" rx="13"/>
+  </g>
 </svg>
