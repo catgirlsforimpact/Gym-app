@@ -252,9 +252,9 @@ function checkExerciseMilestone(i) {
 }
 
 /* ---------- Charts (tiny SVG, no deps) ---------- */
-function lineChart(points, { height = 170, unit = '' } = {}) {
+function lineChart(points, { height = 170, unit = '', emptyText = null } = {}) {
   if (points.length < 2) {
-    return `<div class="empty small">Log this exercise ${points.length ? 'once more' : 'a couple of times'} to see a trend.</div>`;
+    return `<div class="empty small">${emptyText || `Log this exercise ${points.length ? 'once more' : 'a couple of times'} to see a trend.`}</div>`;
   }
   const W = 360, H = height, pl = 30, pr = 10, pt = 12, pb = 22;
   const ys = points.map(p => p.y);
@@ -679,7 +679,7 @@ function bodyweightSection() {
           <button class="btn sm" data-act="bw-log">Log</button>
         </div>
       </div>
-      ${bw.length ? lineChart(bw.slice(-30).map(b => ({ y: b.w, label: fmtDate(b.date, { month: 'numeric', day: 'numeric' }) })), { height: 140, unit: state.unit }) : ''}
+      ${bw.length ? lineChart(bw.slice(-30).map(b => ({ y: b.w, label: fmtDate(b.date, { month: 'numeric', day: 'numeric' }) })), { height: 140, unit: state.unit, emptyText: 'Log your weight on another day to see how it changes over time.' }) : ''}
       ${bw.length ? `<button class="link" style="margin-top:8px" data-act="bw-history">All entries</button>` : ''}
     </div>`;
 }
