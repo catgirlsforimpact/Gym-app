@@ -243,3 +243,28 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .celebrate .stat .v { font-size: 20px; }
 .pr-card { margin-top: 12px; text-align: left; font-size: 15px; }
 .toast { pointer-events: none; }
+
+/* Workout counts on Train */
+.count-line { text-align: center; font-size: 13px; color: var(--muted); margin-top: 10px; font-variant-numeric: tabular-nums; }
+
+/* Today's plan card */
+.today-plan { margin-bottom: 12px; }
+.today-plan-title { font-weight: 600; font-size: 17px; }
+.pill { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 99px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+.pill.done { background: var(--accent); color: var(--accent-text); }
+
+/* Week planner */
+.plan-head .icon-btn { font-size: 26px; line-height: 1; padding: 4px 12px; }
+.plan-week-name { font-weight: 600; font-size: 17px; }
+.plan-day { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+.plan-day-main { flex: 1; display: flex; align-items: center; gap: 14px; padding: 12px 2px; text-align: left; min-width: 0; }
+.plan-date { display: flex; flex-direction: column; align-items: center; width: 42px; flex-shrink: 0; padding: 4px 0; border-radius: 10px; }
+.plan-date .dow { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.plan-date .dom { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.plan-day.today .plan-date { background: var(--accent); }
+.plan-day.today .plan-date .dow, .plan-day.today .plan-date .dom { color: var(--accent-text); }
+.plan-text { flex: 1; min-width: 0; font-weight: 500; }
+.plan-text.unplanned { color: var(--muted); font-weight: 400; font-size: 14px; }
+.plan-text.rest { color: var(--muted); font-weight: 400; }
+.plan-day.past .plan-text, .plan-day.past .plan-date .dom { opacity: .55; }
+.chips.wrap { flex-wrap: wrap; overflow: visible; }

@@ -14,6 +14,7 @@ function defaultState() {
     workouts: [],   // { id, date, title, note, duration, entries: [{ exerciseId, sets: [{ w, r }] }] }
     active: null,   // in-progress workout
     notes: [],      // { id, date, text }
+    plan: {},       // week planner: { 'y-m-d': { text, templateId } }
     templates: [],  // { id, name, entries: [{ exerciseId, sets: n }] }
     bodyweight: [], // { id, date, w }
     restSeconds: 90,
@@ -88,6 +89,21 @@ function todayKey(d = new Date()) {
   const x = new Date(d);
   return `${x.getFullYear()}-${x.getMonth() + 1}-${x.getDate()}`;
 }
+// Workouts in the current calendar month / year / week (local time).
+function workoutCounts(now = new Date()) {
+  const wk = weekStart(now);
+  let week = 0, month = 0, year = 0;
+  state.workouts.forEach(w => {
+    const d = new Date(w.date);
+    if (d.getFullYear() !== now.getFullYear()) return;
+    year++;
+    if (d.getMonth() === now.getMonth()) month++;
+    if (d >= wk) week++;
+  });
+  return { week, month, year, total: state.workouts.length };
+}
+function workoutsOn(key) { return state.workouts.filter(w => todayKey(w.date) === key); }
+
 function weekStart(date) {
   const d = new Date(date); d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday
@@ -207,7 +223,7 @@ function barChart(bars, { height = 120 } = {}) {
 
 /* ---------- Navigation ---------- */
 let tab = 'train';
-const titles = { train: 'Train', exercises: 'Exercises', progress: 'Progress', notes: 'Notes' };
+const titles = { train: 'Train', plan: 'Plan', exercises: 'Exercises', progress: 'Progress', notes: 'Notes' };
 const views = {};
 
 function go(t) {
@@ -235,8 +251,11 @@ views.train = () => {
   const a = state.active;
   if (!a) {
     const recent = [...state.workouts].sort((x, y) => new Date(y.date) - new Date(x.date)).slice(0, 5);
+    const c = workoutCounts();
     return `
+      ${todayPlanCard()}
       <button class="btn block" data-act="start">Start workout</button>
+      <div class="count-line">${c.month} workout${c.month === 1 ? '' : 's'} this month · ${c.year} this year</div>
       ${state.workouts.length ? `<button class="btn ghost block" style="margin-top:10px" data-act="repeat">Repeat last workout</button>` : ''}
       <div class="row between"><div class="label">Templates</div><button class="link" style="margin-top:18px" data-act="new-template">+ New</button></div>
       ${state.templates.length ? `<div class="list">${state.templates.map(t => `
@@ -539,6 +558,121 @@ function showBodyweightHistory() {
     </div>`);
 }
 
+/* ---------- Week planner ---------- */
+let planWeekOffset = 0;   // 0 = this week, 1 = next week, ...
+let planDraft = null;     // day being edited: { key, text, templateId }
+
+const templateById = id => state.templates.find(t => t.id === id);
+const isRestText = t => /^rest( day)?$/i.test((t || '').trim());
+
+// Short label for a planned day, e.g. "Leg day · Glutes focus" or "Rest day".
+function planLabel(p) {
+  if (!p) return '';
+  const t = p.templateId && templateById(p.templateId);
+  if (isRestText(p.text) && !t) return 'Rest day';
+  return [t?.name, p.text?.trim()].filter(Boolean).join(' · ');
+}
+
+function todayPlanCard() {
+  const key = todayKey();
+  const p = state.plan?.[key];
+  if (!p) return '';
+  const t = p.templateId && templateById(p.templateId);
+  const done = workoutsOn(key).length > 0;
+  const rest = isRestText(p.text) && !t;
+  return `<div class="card today-plan">
+    <div class="small muted">Today's plan</div>
+    <div class="row between" style="margin-top:2px">
+      <div class="today-plan-title">${esc(planLabel(p))}</div>
+      ${done ? '<span class="pill done">Done</span>'
+        : t ? `<button class="btn sm" data-act="start-plan" data-key="${key}">Start</button>` : ''}
+    </div>
+    ${rest && !done ? '<div class="small muted" style="margin-top:4px">Recovery is part of the work.</div>' : ''}
+  </div>`;
+}
+
+views.plan = () => {
+  const start = weekStart(new Date());
+  start.setDate(start.getDate() + planWeekOffset * 7);
+  const end = new Date(start); end.setDate(end.getDate() + 6);
+  const today = todayKey();
+  const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d; });
+  const planned = days.filter(d => { const p = state.plan?.[todayKey(d)]; return p && !(isRestText(p.text) && !p.templateId); }).length;
+  const doneN = days.filter(d => workoutsOn(todayKey(d)).length).length;
+  const range = `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: start.getMonth() === end.getMonth() ? undefined : 'short', day: 'numeric' })}`;
+  const name = planWeekOffset === 0 ? 'This week' : planWeekOffset === 1 ? 'Next week' : planWeekOffset === -1 ? 'Last week' : range;
+
+  return `
+    <div class="row between plan-head">
+      <button class="icon-btn" data-act="plan-week" data-v="-1" aria-label="Previous week">‹</button>
+      <div style="text-align:center">
+        <div class="plan-week-name">${esc(name)}</div>
+        <div class="small muted">${esc(range)}</div>
+      </div>
+      <button class="icon-btn" data-act="plan-week" data-v="1" aria-label="Next week">›</button>
+    </div>
+    <div class="seg" style="display:flex;margin-top:10px">
+      <button style="flex:1" class="${planWeekOffset === 0 ? 'active' : ''}" data-act="plan-week-set" data-v="0">This week</button>
+      <button style="flex:1" class="${planWeekOffset === 1 ? 'active' : ''}" data-act="plan-week-set" data-v="1">Next week</button>
+    </div>
+
+    <div class="list" style="margin-top:14px">
+      ${days.map(d => {
+        const key = todayKey(d);
+        const p = state.plan?.[key];
+        const done = workoutsOn(key).length > 0;
+        const t = p?.templateId && templateById(p.templateId);
+        const past = key !== today && d < new Date();
+        const label = planLabel(p);
+        return `<div class="plan-day ${key === today ? 'today' : ''} ${past ? 'past' : ''}">
+          <button class="plan-day-main" data-act="plan-day" data-key="${key}">
+            <span class="plan-date"><span class="dow">${d.toLocaleDateString(undefined, { weekday: 'short' })}</span><span class="dom">${d.getDate()}</span></span>
+            <span class="plan-text ${label ? '' : 'unplanned'} ${label === 'Rest day' ? 'rest' : ''}">${label ? esc(label) : (past ? '—' : 'Tap to plan')}</span>
+          </button>
+          ${done ? '<span class="pill done">Done</span>'
+            : key === today && t ? `<button class="btn sm" data-act="start-plan" data-key="${key}">Start</button>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="row between small muted" style="margin-top:12px">
+      <span>${planned} workout${planned === 1 ? '' : 's'} planned${doneN ? ` · ${doneN} done` : ''}</span>
+      <button class="link" data-act="plan-copy">Copy last week</button>
+    </div>
+  `;
+};
+
+function editPlanDay(key) {
+  const p = state.plan?.[key] || {};
+  planDraft = { key, text: p.text || '', templateId: p.templateId || null };
+  const [y, m, dd] = key.split('-').map(Number);
+  const d = new Date(y, m - 1, dd);
+  const logged = workoutsOn(key);
+  openSheet(`
+    <h2>${d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h2>
+    <div class="label">Workout</div>
+    <div class="chips wrap" id="plan-chips">
+      ${state.templates.map(t => `<button class="chip ${planDraft.templateId === t.id ? 'active' : ''}" data-act="plan-pick" data-id="${t.id}">${esc(t.name)}</button>`).join('')}
+      <button class="chip ${isRestText(planDraft.text) && !planDraft.templateId ? 'active' : ''}" data-act="plan-rest">Rest day</button>
+    </div>
+    ${state.templates.length ? '' : '<div class="small muted" style="margin-top:6px">Tip: save templates on the Train tab to pick them here.</div>'}
+    <div class="label">Note</div>
+    <input id="plan-text" placeholder="e.g. Glutes + hamstrings, 45 min" value="${esc(isRestText(planDraft.text) ? '' : planDraft.text)}" maxlength="80" />
+    ${logged.length ? `<div class="label">Logged</div><div class="list">${logged.map(workoutRow).join('')}</div>` : ''}
+    <div class="row" style="margin-top:18px">
+      <button class="btn danger" data-act="plan-clear">Clear</button>
+      <button class="btn" style="flex:1" data-act="plan-save">Save</button>
+    </div>
+  `, sheet => {
+    const input = $('#plan-text', sheet);
+    input.addEventListener('input', () => {
+      planDraft.text = input.value;
+      if (input.value.trim()) $('[data-act="plan-rest"]', sheet)?.classList.remove('active');
+    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') $('[data-act="plan-save"]', sheet).click(); });
+  });
+}
+
 /* ---------- Exercises ---------- */
 let exFilter = 'All', exQuery = '';
 
@@ -612,12 +746,14 @@ views.progress = () => {
   const sorted = [...ws].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return `
-    <div class="stats">
-      <div class="stat"><div class="v">${ws.length}</div><div class="k">Workouts</div></div>
-      <div class="stat"><div class="v">${perWeek[perWeek.length - 1].v}</div><div class="k">This week</div></div>
+    ${(c => `<div class="stats">
+      <div class="stat"><div class="v">${c.week}</div><div class="k">This week</div></div>
+      <div class="stat"><div class="v">${c.month}</div><div class="k">This month</div></div>
+      <div class="stat"><div class="v">${c.year}</div><div class="k">This year</div></div>
+      <div class="stat"><div class="v">${c.total}</div><div class="k">All workouts</div></div>
       <div class="stat"><div class="v">${streak}</div><div class="k">Week streak</div></div>
       <div class="stat"><div class="v">${vol30 >= 10000 ? fmt(vol30 / 1000) + 'k' : fmt(vol30)}</div><div class="k">${state.unit} lifted · 30d</div></div>
-    </div>
+    </div>`)(workoutCounts(now))}
 
     <div class="label">Workouts per week</div>
     <div class="card">${barChart(perWeek)}</div>
@@ -909,6 +1045,53 @@ document.addEventListener('click', e => {
   switch (act) {
     case 'close-sheet': if (!$('#sheet').dataset.dragged) closeSheet(); break;
     case 'start': startWorkout(); break;
+    // Week planner
+    case 'plan-week': planWeekOffset = Math.max(-8, Math.min(12, planWeekOffset + +el.dataset.v)); render(); break;
+    case 'plan-week-set': planWeekOffset = +el.dataset.v; render(); break;
+    case 'plan-day': editPlanDay(el.dataset.key); break;
+    case 'plan-pick': {
+      planDraft.templateId = planDraft.templateId === id ? null : id;
+      if (isRestText(planDraft.text)) planDraft.text = '';
+      document.querySelectorAll('#plan-chips .chip').forEach(c => c.classList.toggle('active', c.dataset.id === planDraft.templateId && !!planDraft.templateId));
+      break;
+    }
+    case 'plan-rest': {
+      const on = !el.classList.contains('active');
+      planDraft.templateId = null;
+      planDraft.text = on ? 'Rest' : '';
+      $('#plan-text').value = '';
+      document.querySelectorAll('#plan-chips .chip').forEach(c => c.classList.toggle('active', on && c === el));
+      break;
+    }
+    case 'plan-save': {
+      const { key, templateId } = planDraft;
+      const text = isRestText(planDraft.text) ? 'Rest' : planDraft.text.trim();
+      state.plan ||= {};
+      if (!text && !templateId) delete state.plan[key]; else state.plan[key] = { text, templateId };
+      save(); closeSheet(); render();
+      break;
+    }
+    case 'plan-clear': delete state.plan?.[planDraft.key]; save(); closeSheet(); render(); break;
+    case 'plan-copy': {
+      const start = weekStart(new Date()); start.setDate(start.getDate() + planWeekOffset * 7);
+      let n = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start); d.setDate(d.getDate() + i);
+        const prev = new Date(d); prev.setDate(prev.getDate() - 7);
+        const src = state.plan?.[todayKey(prev)], key = todayKey(d);
+        if (src && !state.plan[key]) { state.plan[key] = { ...src }; n++; }
+      }
+      save(); render();
+      toast(n ? `Copied ${n} day${n === 1 ? '' : 's'} from last week` : 'Nothing new to copy');
+      break;
+    }
+    case 'start-plan': {
+      const t = templateById(state.plan?.[el.dataset.key]?.templateId);
+      if (!t) break;
+      if (state.active) { toast('Finish or discard your current workout first'); go('train'); break; }
+      startFromTemplate(t); if (tab !== 'train') go('train');
+      break;
+    }
     case 'repeat': {
       const src = id ? state.workouts.find(w => w.id === id)
         : [...state.workouts].sort((x, y) => new Date(y.date) - new Date(x.date))[0];
