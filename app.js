@@ -82,11 +82,16 @@ function load() {
     // Add any new built-in exercises shipped after first launch.
     const have = new Set(s.exercises.map(e => e.id));
     DEFAULT_EXERCISES.forEach(e => { if (!have.has(e.id)) s.exercises.push({ ...e, tips: [...e.tips], note: '', custom: false }); });
-    // Built-in tips were updated: add any new ones to saved exercises, keeping your own edits.
+    // Built-in tips were rewritten: use the new ones, and keep any tips you wrote yourself
+    // (anything that was never a built-in tip) after them.
     if ((saved.tipsVersion || 1) < TIPS_VERSION) {
+      const legacy = typeof LEGACY_TIPS === 'object' ? LEGACY_TIPS : {};
       s.exercises.forEach(ex => {
         const def = !ex.custom && DEFAULT_EXERCISES.find(d => d.id === ex.id);
-        if (def) def.tips.forEach(t => { if (!ex.tips.includes(t)) ex.tips.push(t); });
+        if (!def) return;
+        const builtIn = new Set([...(legacy[ex.id] || []), ...def.tips]);
+        const own = (ex.tips || []).filter(t => !builtIn.has(t));
+        ex.tips = [...def.tips, ...own];
       });
       s.tipsVersion = TIPS_VERSION;
     }
@@ -385,11 +390,15 @@ function repRange() {
   const [lo, hi] = Array.isArray(state.repRange) ? state.repRange.map(Number) : [];
   return lo >= 1 && hi > lo && hi <= 50 ? [lo, hi] : [8, 13];
 }
+const libraryEntry = ex => DEFAULT_EXERCISES.find(d => d.id === ex?.id);
 function weightStep(ex) {
-  // single small muscles (curls, pushdowns, lateral raises) go up 1 kg; everything else 2.5 kg
+  // small isolation moves (curls, flyes, raises, kickbacks) go up 1 kg; everything else 2.5 kg
+  const lib = libraryEntry(ex);
+  if (lib?.step) return lib.step;
   const g = exGroups(ex);
   return g.length === 1 && ['Biceps', 'Triceps', 'Shoulders', 'Core'].includes(g[0]) ? 1 : 2.5;
 }
+const isTimed = ex => !!libraryEntry(ex)?.time;
 const roundW = w => Math.round(w * 4) / 4;
 
 // Suggestion for the next session of an exercise, based on its last session.
@@ -402,7 +411,7 @@ function suggestNext(exerciseId) {
   const working = sets.filter(x => x.w === topW);
   const minR = Math.min(...working.map(x => x.r));
   const count = sets.length;
-  if (ex.id === 'plank') return { kind: 'time', w: 0, r: minR + 5, count, label: '+5 seconds', last };
+  if (isTimed(ex)) return { kind: 'time', w: 0, r: minR + 5, count, label: '+5 seconds', last };
   if (topW <= 0) return { kind: 'reps', w: 0, r: minR + 1, count, label: '+1 rep', last };
   const [lo, hi] = repRange();
   if (minR >= hi) {
@@ -897,11 +906,21 @@ views.exercises = () => {
   `;
 };
 
+// Best matches first: exact name, name starts with it, a word starts with it, contains it, muscle group.
+function searchRank(e, q) {
+  const n = e.name.toLowerCase();
+  if (n === q) return 0;
+  if (n.startsWith(q)) return 1;
+  if (n.split(/[\s-]+/).some(w => w.startsWith(q))) return 2;
+  if (n.includes(q)) return 3;
+  return 4;
+}
+
 function exerciseListHtml(act = 'show-ex') {
   const q = exQuery.trim().toLowerCase();
   const list = state.exercises
     .filter(e => (exFilter === 'All' || exGroups(e).includes(exFilter)) && (!q || e.name.toLowerCase().includes(q) || exGroups(e).some(g => g.toLowerCase().includes(q))))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (q ? searchRank(a, q) - searchRank(b, q) : 0) || a.name.localeCompare(b.name));
   if (!list.length) return `<div class="empty">Nothing found.</div>`;
   return list.map(e => {
     const h = exerciseHistory(e.id);
