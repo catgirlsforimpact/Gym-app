@@ -367,10 +367,53 @@ views.train = () => {
   `;
 };
 
+/* ---------- Progression (double progression) ----------
+   Work in a rep range. Add one rep each session at the same weight; once every
+   working set reaches the top of the range, add weight and go back to the bottom. */
+function repRange(ex) {
+  const g = exGroups(ex);
+  return (g.includes('Calves') || g.includes('Core') || ex?.id === 'frog-pump') ? [12, 20] : [8, 12];
+}
+function weightStep(ex) {
+  // single small muscles (curls, pushdowns, lateral raises) go up 1 kg; everything else 2.5 kg
+  const g = exGroups(ex);
+  return g.length === 1 && ['Biceps', 'Triceps', 'Shoulders', 'Core'].includes(g[0]) ? 1 : 2.5;
+}
+const roundW = w => Math.round(w * 4) / 4;
+
+// Suggestion for the next session of an exercise, based on its last session.
+function suggestNext(exerciseId) {
+  const ex = exById(exerciseId); if (!ex) return null;
+  const hist = exerciseHistory(exerciseId);
+  const last = hist[hist.length - 1]; if (!last) return null;
+  const sets = last.sets.map(x => ({ w: num(x.w), r: num(x.r) }));
+  const topW = Math.max(...sets.map(x => x.w));
+  const working = sets.filter(x => x.w === topW);
+  const minR = Math.min(...working.map(x => x.r));
+  const count = sets.length;
+  if (ex.id === 'plank') return { kind: 'time', w: 0, r: minR + 5, count, label: '+5 seconds', last };
+  if (topW <= 0) return { kind: 'reps', w: 0, r: minR + 1, count, label: '+1 rep', last };
+  const [lo, hi] = repRange(ex);
+  if (minR >= hi) {
+    const step = weightStep(ex);
+    return { kind: 'weight', w: roundW(topW + step), r: lo, count, label: `+${fmt(step)} kg`, last };
+  }
+  return { kind: 'reps', w: topW, r: minR + 1, count, label: '+1 rep', last };
+}
+function suggestText(sg) {
+  if (sg.kind === 'time') return `${sg.r} seconds`;
+  return sg.w > 0 ? `${fmt(sg.w)} ${state.unit} × ${sg.r}` : `${sg.r} reps`;
+}
+
 function entryBlock(en, i) {
   const ex = exById(en.exerciseId) || { name: 'Unknown exercise' };
   const hist = exerciseHistory(en.exerciseId);
   const last = hist[hist.length - 1];
+  const sg = suggestNext(en.exerciseId);
+  // hints: the suggested target, falling back to last session's matching set
+  const hintW = j => sg ? (sg.w || 0) : (last?.sets[j] ? num(last.sets[j].w) : (last?.topW ?? 0));
+  const hintR = j => sg ? sg.r : (last?.sets[j] ? num(last.sets[j].r) : (last?.topR ?? 0));
+  const weightsMissing = sg && sg.w > 0 && (en.sets.length < sg.count || en.sets.some(x => String(x.w) !== String(sg.w)));
   return `
     <div class="card entry" data-entry="${i}">
       <div class="entry-head">
@@ -381,13 +424,17 @@ function entryBlock(en, i) {
         <span class="h">Set</span><span class="h" style="text-align:center">${state.unit}</span><span class="h" style="text-align:center">Reps</span><span></span>
         ${en.sets.map((s, j) => `
           <span class="n">${j + 1}</span>
-          <input inputmode="decimal" data-set="${i}:${j}:w" value="${esc(s.w)}" placeholder="${last?.topW ?? 0}" aria-label="Weight set ${j + 1}" />
-          <input inputmode="numeric" data-set="${i}:${j}:r" value="${esc(s.r)}" placeholder="${last?.topR ?? 0}" aria-label="Reps set ${j + 1}" />
+          <input inputmode="decimal" data-set="${i}:${j}:w" value="${esc(s.w)}" placeholder="${fmt(hintW(j))}" aria-label="Weight set ${j + 1}" />
+          <input inputmode="numeric" data-set="${i}:${j}:r" value="${esc(s.r)}" placeholder="${hintR(j)}" aria-label="Reps set ${j + 1}" />
           <button class="x" data-act="remove-set" data-i="${i}" data-j="${j}" aria-label="Remove set">×</button>
         `).join('')}
       </div>
+      ${sg ? `<div class="suggest">
+        <div class="suggest-text"><span class="suggest-label">Target</span> ${esc(suggestText(sg))}${sg.count > 1 ? ` · ${sg.count} sets` : ''} <span class="suggest-tag ${sg.kind}">${esc(sg.label)}</span></div>
+        ${weightsMissing ? `<button class="link" data-act="apply-suggest" data-i="${i}">Use</button>` : ''}
+      </div>` : ''}
       <div class="row between" style="margin-top:10px">
-        <span class="prev">${last ? `Last: ${last.sets.map(s => `${fmt(num(s.w))}×${num(s.r)}`).join(', ')}` : 'First time — have fun'}</span>
+        <span class="prev">${last ? `Last (${relDay(last.date)}): ${last.sets.map(s => `${fmt(num(s.w))}×${num(s.r)}`).join(', ')}` : 'First time, have fun'}</span>
         <button class="btn ghost sm" data-act="add-set" data-i="${i}">+ Set</button>
       </div>
     </div>`;
@@ -987,6 +1034,7 @@ function showExercise(id) {
       <div class="card" style="margin-top:10px">${lineChart(hist.map(h => ({ y: h.best1rm, label: fmtDate(h.date, { month: 'numeric', day: 'numeric' }) })), { height: 140, unit: state.unit })}</div>
     ` : ''}
 
+    ${(sg => sg ? `<div class="suggest" style="margin-top:12px"><div class="suggest-text"><span class="suggest-label">Next time</span> ${esc(suggestText(sg))}${sg.count > 1 ? ` · ${sg.count} sets` : ''} <span class="suggest-tag ${sg.kind}">${esc(sg.label)}</span></div></div>` : '')(suggestNext(id))}
     <div class="label">Form tips</div>
     ${ex.tips.length ? `<ol class="tips">${ex.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : `<div class="muted small">No tips yet — add some with Edit.</div>`}
 
@@ -1180,6 +1228,14 @@ document.addEventListener('click', e => {
       break;
     }
     case 'add-exercise': pickExercise(); break;
+    case 'apply-suggest': {
+      const en = a.entries[+el.dataset.i];
+      const sg = suggestNext(en.exerciseId); if (!sg) break;
+      while (en.sets.length < sg.count) en.sets.push({ w: '', r: '' });
+      en.sets.forEach(x => { if (num(x.r) === 0) x.w = sg.w > 0 ? String(sg.w) : x.w; });
+      save(); render();
+      break;
+    }
     case 'pick-ex':
       if (!a) break;
       a.entries.push({ exerciseId: id, sets: [{ w: '', r: '' }] });

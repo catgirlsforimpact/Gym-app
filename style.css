@@ -270,3 +270,10 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .chips.wrap { flex-wrap: wrap; overflow: visible; }
 
 .recover-card { margin-top: 18px; border-color: var(--accent); }
+
+/* Progression suggestion */
+.suggest { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: var(--soft); }
+.suggest-text { font-size: 14px; font-variant-numeric: tabular-nums; }
+.suggest-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 4px; }
+.suggest-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-left: 4px; white-space: nowrap; background: var(--surface); color: var(--muted); }
+.suggest-tag.weight { background: var(--accent); color: var(--accent-text); }
