@@ -13,6 +13,11 @@ function defaultState() {
     workouts: [],   // { id, date, title, note, duration, entries: [{ exerciseId, sets: [{ w, r }] }] }
     active: null,   // in-progress workout
     notes: [],      // { id, date, text }
+    templates: [],  // { id, name, entries: [{ exerciseId, sets: n }] }
+    bodyweight: [], // { id, date, w }
+    restSeconds: 90,
+    autoRest: true, // start rest timer when a set's reps are entered
+    restEnd: null,  // timestamp (ms) when current rest ends
   };
 }
 
@@ -63,6 +68,14 @@ function fmtDuration(ms) {
   const m = Math.floor(ms / 60000), h = Math.floor(m / 60);
   return h ? `${h}h ${m % 60}m` : `${m}m`;
 }
+function fmtClock(sec) {
+  sec = Math.max(0, Math.round(sec));
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+}
+function todayKey(d = new Date()) {
+  const x = new Date(d);
+  return `${x.getFullYear()}-${x.getMonth() + 1}-${x.getDate()}`;
+}
 function weekStart(date) {
   const d = new Date(date); d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday
@@ -92,6 +105,7 @@ function exerciseHistory(id) {
 }
 
 function toast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
   const el = document.createElement('div');
   el.className = 'toast'; el.textContent = msg;
   document.body.appendChild(el);
@@ -116,7 +130,7 @@ function lineChart(points, { height = 170, unit = '' } = {}) {
   const showEvery = Math.ceil(points.length / 6);
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Progress chart">
     ${ticks.map(t => `<line class="axis" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}" stroke-dasharray="2 4"/>
-      <text class="lbl" x="${pl - 6}" y="${y(t) + 3}" text-anchor="end">${Math.round(t)}</text>`).join('')}
+      <text class="lbl" x="${pl - 6}" y="${y(t) + 3}" text-anchor="end">${(max - min) < 10 ? t.toFixed(1) : Math.round(t)}</text>`).join('')}
     <path class="area" d="${area}"/>
     <path class="ln" d="${path}"/>
     ${points.map((p, i) => `<circle class="pt" cx="${x(i)}" cy="${y(p.y)}" r="3.5"><title>${esc(p.label)}: ${fmt(p.y)} ${unit}</title></circle>`).join('')}
@@ -171,6 +185,16 @@ views.train = () => {
     return `
       <button class="btn block" data-act="start">Start workout</button>
       ${state.workouts.length ? `<button class="btn ghost block" style="margin-top:10px" data-act="repeat">Repeat last workout</button>` : ''}
+      <div class="row between"><div class="label">Templates</div><button class="link" style="margin-top:18px" data-act="new-template">+ New</button></div>
+      ${state.templates.length ? `<div class="list">${state.templates.map(t => `
+        <div class="list-item">
+          <button style="flex:1;text-align:left" data-act="edit-template" data-id="${t.id}">
+            <div class="title">${esc(t.name)}</div>
+            <div class="sub">${t.entries.map(en => esc(exById(en.exerciseId)?.name || '?')).slice(0, 3).join(', ')}${t.entries.length > 3 ? ` +${t.entries.length - 3}` : ''}</div>
+          </button>
+          <button class="btn sm" data-act="start-template" data-id="${t.id}">Start</button>
+        </div>`).join('')}</div>`
+        : `<div class="muted small">Save a routine you repeat, like "Push day", and start it with one tap.</div>`}
       <div class="label">Recent</div>
       ${recent.length ? `<div class="list">${recent.map(workoutRow).join('')}</div>`
         : `<div class="empty">No workouts yet.<br>Start one and log your first sets.</div>`}
@@ -187,7 +211,11 @@ views.train = () => {
 
     ${a.entries.map((en, i) => entryBlock(en, i)).join('') || `<div class="empty">Add your first exercise.</div>`}
 
-    <button class="btn ghost block" style="margin-top:18px" data-act="add-exercise">+ Add exercise</button>
+    <div class="row" style="margin-top:18px">
+      <button class="btn ghost" style="flex:1" data-act="add-exercise">+ Add exercise</button>
+      <button class="btn ghost" data-act="rest-start">Rest ${fmtClock(state.restSeconds)}</button>
+    </div>
+    ${a.entries.length ? `<button class="link" style="margin-top:12px" data-act="save-template">Save as template</button>` : ''}
 
     <div class="label">Workout notes</div>
     <textarea data-field="note" placeholder="How did it feel? Energy, sleep, anything to remember…">${esc(a.note)}</textarea>
@@ -264,8 +292,179 @@ function finishWorkout() {
   a.duration = Date.now() - new Date(a.date);
   state.workouts.push(a);
   state.active = null;
+  state.restEnd = null; renderRest();
   save(); render();
   toast(prs.length ? `New PR: ${prs.join(', ')} 🎉` : 'Workout saved');
+}
+
+/* ---------- Rest timer ---------- */
+let restHandle = null;
+
+function startRest(seconds = state.restSeconds) {
+  state.restEnd = Date.now() + seconds * 1000; save();
+  primeAudio();
+  renderRest();
+}
+function stopRest() { state.restEnd = null; save(); renderRest(); }
+function adjustRest(delta) {
+  if (!state.restEnd) return;
+  state.restEnd = Math.max(Date.now() + 1000, state.restEnd + delta * 1000); save(); renderRest();
+}
+
+function renderRest() {
+  clearInterval(restHandle);
+  let bar = $('#rest-bar');
+  document.body.classList.toggle('resting', !!state.restEnd);
+  if (!state.restEnd) { bar?.remove(); return; }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'rest-bar'; bar.className = 'rest-bar';
+    bar.innerHTML = `
+      <div class="rest-fill" id="rest-fill"></div>
+      <span class="rest-label">Rest</span>
+      <span class="rest-time" id="rest-time"></span>
+      <button data-act="rest-adj" data-v="-15" aria-label="Subtract 15 seconds">−15</button>
+      <button data-act="rest-adj" data-v="15" aria-label="Add 15 seconds">+15</button>
+      <button data-act="rest-stop">Skip</button>`;
+    document.body.appendChild(bar);
+  }
+  const total = Math.max(1, state.restSeconds);
+  const tick = () => {
+    const left = (state.restEnd - Date.now()) / 1000;
+    if (left <= 0) { restDone(); return; }
+    $('#rest-time').textContent = fmtClock(Math.ceil(left));
+    $('#rest-fill').style.transform = `scaleX(${Math.min(1, left / total)})`;
+  };
+  tick(); restHandle = setInterval(tick, 250);
+}
+
+function restDone() {
+  state.restEnd = null; save(); renderRest();
+  beep();
+  navigator.vibrate?.([200, 100, 200]);
+  toast('Rest over — next set');
+}
+
+// Short beep with Web Audio. The context is created on a user tap so browsers allow sound.
+let audioCtx = null;
+function primeAudio() {
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume?.(); } catch { /* no audio */ }
+}
+function beep() {
+  if (!audioCtx) return;
+  try {
+    [0, 0.25].forEach(offset => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+      const t = audioCtx.currentTime + offset;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      o.start(t); o.stop(t + 0.2);
+    });
+  } catch { /* ignore */ }
+}
+
+// Catch up if the app was in the background when the rest ended.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && state.restEnd) renderRest();
+});
+
+/* ---------- Templates ---------- */
+let templateDraft = null; // template being edited in the sheet
+
+// Last weights used for an exercise, so a new workout is pre-filled.
+function lastSetsFor(id) {
+  const h = exerciseHistory(id);
+  return h.length ? h[h.length - 1].sets : [];
+}
+
+function startFromTemplate(t) {
+  startWorkout(t.entries.filter(en => exById(en.exerciseId)).map(en => {
+    const prev = lastSetsFor(en.exerciseId);
+    return {
+      exerciseId: en.exerciseId,
+      sets: Array.from({ length: Math.max(1, en.sets) }, (_, i) => ({ w: prev[i]?.w ?? prev[prev.length - 1]?.w ?? '', r: '' })),
+    };
+  }));
+  state.active.title = t.name; save(); render();
+}
+
+function templateFromWorkout(w) {
+  return { id: uid(), name: w.title || 'My routine', entries: w.entries.map(en => ({ exerciseId: en.exerciseId, sets: Math.max(1, en.sets.length) })) };
+}
+
+function editTemplate(draft) {
+  templateDraft = draft;
+  const isNew = !state.templates.some(t => t.id === draft.id);
+  openSheet(`
+    <h2>${isNew ? 'New template' : 'Edit template'}</h2>
+    <input id="t-name" placeholder="Name, e.g. Push day" value="${esc(draft.name)}" style="margin-top:16px" />
+    <div class="label">Exercises</div>
+    ${draft.entries.length ? `<div class="list">${draft.entries.map((en, i) => `
+      <div class="list-item">
+        <span class="title" style="flex:1">${esc(exById(en.exerciseId)?.name || 'Unknown')}</span>
+        <div class="stepper">
+          <button data-act="t-sets" data-i="${i}" data-v="-1" aria-label="Fewer sets">−</button>
+          <span>${en.sets} set${en.sets > 1 ? 's' : ''}</span>
+          <button data-act="t-sets" data-i="${i}" data-v="1" aria-label="More sets">+</button>
+        </div>
+        <button class="x" data-act="t-remove" data-i="${i}" aria-label="Remove">×</button>
+      </div>`).join('')}</div>` : `<div class="muted small">No exercises yet.</div>`}
+    <button class="btn ghost block" style="margin-top:14px" data-act="t-add">+ Add exercise</button>
+    <button class="btn block" style="margin-top:10px" data-act="t-save">Save template</button>
+    ${!isNew ? `<button class="btn danger block" style="margin-top:6px" data-act="t-delete">Delete template</button>` : ''}
+  `, sheet => {
+    $('#t-name', sheet).addEventListener('input', e => { templateDraft.name = e.target.value; });
+  });
+}
+
+/* ---------- Body weight ---------- */
+function bodyweightSorted() { return [...state.bodyweight].sort((a, b) => new Date(a.date) - new Date(b.date)); }
+
+function logBodyweight(value) {
+  const w = num(value);
+  if (w <= 0) { toast('Enter your weight'); return false; }
+  const key = todayKey();
+  const existing = state.bodyweight.find(b => todayKey(b.date) === key);
+  if (existing) { existing.w = w; existing.date = new Date().toISOString(); }
+  else state.bodyweight.push({ id: uid(), date: new Date().toISOString(), w });
+  save(); return true;
+}
+
+function bodyweightSection() {
+  const bw = bodyweightSorted();
+  const last = bw[bw.length - 1];
+  const monthAgo = new Date(); monthAgo.setDate(monthAgo.getDate() - 30);
+  const base = bw.find(b => new Date(b.date) >= monthAgo) || bw[0];
+  const change = last && base && last !== base ? last.w - base.w : null;
+  return `
+    <div class="label">Body weight</div>
+    <div class="card">
+      <div class="row between" style="margin-bottom:${bw.length ? 10 : 0}px">
+        <div>
+          <div class="bw-now">${last ? `${fmt(last.w)} <span class="muted small">${state.unit}</span>` : '<span class="muted small">Not logged yet</span>'}</div>
+          ${change !== null ? `<div class="small muted">${change > 0 ? '+' : ''}${fmt(change)} ${state.unit} in 30 days</div>` : ''}
+        </div>
+        <div class="row" style="gap:6px">
+          <input id="bw-input" inputmode="decimal" placeholder="${last ? fmt(last.w) : state.unit}" style="width:84px;text-align:center" aria-label="Body weight" />
+          <button class="btn sm" data-act="bw-log">Log</button>
+        </div>
+      </div>
+      ${bw.length ? lineChart(bw.slice(-30).map(b => ({ y: b.w, label: fmtDate(b.date, { month: 'numeric', day: 'numeric' }) })), { height: 140, unit: state.unit }) : ''}
+      ${bw.length ? `<button class="link" style="margin-top:8px" data-act="bw-history">All entries</button>` : ''}
+    </div>`;
+}
+
+function showBodyweightHistory() {
+  const bw = bodyweightSorted().reverse();
+  openSheet(`
+    <h2>Body weight</h2>
+    <div class="list" style="margin-top:16px">
+      ${bw.map(b => `<div class="list-item"><span>${fmtDate(b.date, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+        <span class="row"><span>${fmt(b.w)} ${state.unit}</span><button class="x" data-act="bw-del" data-id="${b.id}" aria-label="Delete entry">×</button></span></div>`).join('')
+        || `<div class="empty">No entries.</div>`}
+    </div>`);
 }
 
 /* ---------- Exercises ---------- */
@@ -308,7 +507,7 @@ let progressEx = null;
 
 views.progress = () => {
   const ws = state.workouts;
-  if (!ws.length) return `<div class="empty">Your stats will show up here after your first workout.</div>`;
+  if (!ws.length) return `<div class="empty">Your workout stats will show up here after your first workout.</div>${bodyweightSection()}`;
 
   const now = new Date();
   const thisWeek = weekStart(now);
@@ -363,6 +562,8 @@ views.progress = () => {
       ${lineChart(hist.map(h => ({ y: h.best1rm, label: fmtDate(h.date, { month: 'numeric', day: 'numeric' }) })), { unit: state.unit })}
       ${best.best1rm ? `<div class="small muted" style="margin-top:8px">Best set: ${fmt(best.topW)} ${state.unit} × ${best.topR} · ${fmtDate(best.date)}</div>` : ''}
     </div>
+
+    ${bodyweightSection()}
 
     <div class="label">History</div>
     <div class="list">${sorted.map(workoutRow).join('')}</div>
@@ -469,16 +670,18 @@ function editExercise(id) {
   `, sheet => $('#f-name', sheet).focus());
 }
 
-function pickExercise() {
+// act: 'pick-ex' adds to the active workout, 't-pick' adds to the template being edited.
+function pickExercise(act = 'pick-ex') {
   exQuery = ''; exFilter = 'All';
   openSheet(`
     <h2>Add exercise</h2>
     <input type="search" id="pick-search" placeholder="Search" style="margin-top:14px" />
-    <div class="list" id="pick-list" style="margin-top:10px">${exerciseListHtml('pick-ex')}</div>
-    <button class="btn ghost block" style="margin-top:14px" data-act="new-ex">+ Create new exercise</button>
+    <div class="list" id="pick-list" style="margin-top:10px">${exerciseListHtml(act)}</div>
+    ${act === 'pick-ex' ? `<button class="btn ghost block" style="margin-top:14px" data-act="new-ex">+ Create new exercise</button>`
+      : `<button class="btn ghost block" style="margin-top:14px" data-act="t-back">Back</button>`}
   `, sheet => {
     const s = $('#pick-search', sheet);
-    s.addEventListener('input', () => { exQuery = s.value; $('#pick-list').innerHTML = exerciseListHtml('pick-ex'); });
+    s.addEventListener('input', () => { exQuery = s.value; $('#pick-list').innerHTML = exerciseListHtml(act); });
   });
 }
 
@@ -497,6 +700,7 @@ function openWorkout(id) {
       <button class="btn danger" data-act="delete-workout" data-id="${w.id}">Delete</button>
       <button class="btn ghost" style="flex:1" data-act="repeat" data-id="${w.id}">Do this again</button>
     </div>
+    <button class="link" style="margin-top:14px" data-act="save-template" data-id="${w.id}">Save as template</button>
   `, sheet => {
     $('#w-note', sheet).addEventListener('input', e => { w.note = e.target.value; save(); });
   });
@@ -507,6 +711,12 @@ function openSettings() {
     <h2>Settings</h2>
     <div class="label">Units</div>
     <div class="seg">${['kg', 'lb'].map(u => `<button class="${state.unit === u ? 'active' : ''}" data-act="unit" data-v="${u}">${u}</button>`).join('')}</div>
+    <div class="label">Rest timer</div>
+    <div class="seg">${[60, 90, 120, 180].map(s => `<button class="${state.restSeconds === s ? 'active' : ''}" data-act="rest-len" data-v="${s}">${fmtClock(s)}</button>`).join('')}</div>
+    <label class="row small" style="margin-top:12px;cursor:pointer">
+      <input type="checkbox" id="auto-rest" ${state.autoRest ? 'checked' : ''} style="width:auto;margin:0" />
+      Start automatically after logging a set
+    </label>
     <div class="label">Appearance</div>
     <div class="seg">${['auto', 'light', 'dark'].map(t => `<button class="${state.theme === t ? 'active' : ''}" data-act="theme" data-v="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div>
     <div class="label">Your data</div>
@@ -516,6 +726,7 @@ function openSettings() {
       <label class="btn ghost" style="flex:1">Import<input type="file" id="import-file" accept="application/json" hidden /></label>
     </div>
   `, sheet => {
+    $('#auto-rest', sheet).addEventListener('change', e => { state.autoRest = e.target.checked; save(); });
     $('#import-file', sheet).addEventListener('change', async e => {
       const file = e.target.files[0]; if (!file) return;
       try {
@@ -565,7 +776,7 @@ document.addEventListener('click', e => {
     }
     case 'remove-set': a.entries[+el.dataset.i].sets.splice(+el.dataset.j, 1); save(); render(); break;
     case 'remove-entry': a.entries.splice(+el.dataset.i, 1); save(); render(); break;
-    case 'discard': if (confirm('Discard this workout?')) { state.active = null; save(); render(); } break;
+    case 'discard': if (confirm('Discard this workout?')) { state.active = null; state.restEnd = null; renderRest(); save(); render(); } break;
     case 'finish': finishWorkout(); break;
     case 'show-ex': showExercise(id); break;
     case 'edit-ex': editExercise(id); break;
@@ -597,6 +808,61 @@ document.addEventListener('click', e => {
     case 'del-note': if (confirm('Delete note?')) { state.notes = state.notes.filter(n => n.id !== id); save(); render(); } break;
     case 'unit': state.unit = el.dataset.v; save(); openSettings(); render(); break;
     case 'theme': state.theme = el.dataset.v; save(); applyTheme(); openSettings(); break;
+    // Rest timer
+    case 'rest-start': startRest(); break;
+    case 'rest-stop': stopRest(); break;
+    case 'rest-adj': adjustRest(+el.dataset.v); break;
+    case 'rest-len': state.restSeconds = +el.dataset.v; save(); openSettings(); if (tab === 'train') render(); break;
+    // Templates
+    case 'new-template': editTemplate({ id: uid(), name: '', entries: [] }); break;
+    case 'edit-template': {
+      const t = state.templates.find(x => x.id === id);
+      if (t) editTemplate(JSON.parse(JSON.stringify(t)));
+      break;
+    }
+    case 'start-template': {
+      const t = state.templates.find(x => x.id === id); if (!t) break;
+      if (state.active && !confirm('You already have a workout in progress. Replace it?')) break;
+      startFromTemplate(t);
+      break;
+    }
+    case 'save-template': {
+      const src = id ? state.workouts.find(w => w.id === id) : state.active;
+      if (!src) break;
+      editTemplate(templateFromWorkout(src));
+      break;
+    }
+    case 't-sets': {
+      const en = templateDraft.entries[+el.dataset.i];
+      en.sets = Math.min(20, Math.max(1, en.sets + +el.dataset.v)); editTemplate(templateDraft);
+      break;
+    }
+    case 't-remove': templateDraft.entries.splice(+el.dataset.i, 1); editTemplate(templateDraft); break;
+    case 't-add': pickExercise('t-pick'); break;
+    case 't-pick': templateDraft.entries.push({ exerciseId: id, sets: 3 }); editTemplate(templateDraft); break;
+    case 't-back': editTemplate(templateDraft); break;
+    case 't-save': {
+      const t = templateDraft;
+      t.name = t.name.trim();
+      if (!t.name) { toast('Give it a name'); break; }
+      if (!t.entries.length) { toast('Add at least one exercise'); break; }
+      const i = state.templates.findIndex(x => x.id === t.id);
+      if (i >= 0) state.templates[i] = t; else state.templates.push(t);
+      templateDraft = null; save(); closeSheet(); render(); toast('Template saved');
+      break;
+    }
+    case 't-delete':
+      if (confirm('Delete this template?')) {
+        state.templates = state.templates.filter(x => x.id !== templateDraft.id);
+        templateDraft = null; save(); closeSheet(); render();
+      }
+      break;
+    // Body weight
+    case 'bw-log': if (logBodyweight($('#bw-input').value)) { render(); toast('Weight logged'); } break;
+    case 'bw-history': showBodyweightHistory(); break;
+    case 'bw-del':
+      state.bodyweight = state.bodyweight.filter(b => b.id !== id); save(); showBodyweightHistory(); render();
+      break;
     case 'export': {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
@@ -620,11 +886,24 @@ document.addEventListener('input', e => {
   }
 });
 
+// Auto-start the rest timer once a set's reps are filled in (fires when the field loses focus).
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (!state.active || !state.autoRest || !t.dataset.set?.endsWith(':r')) return;
+  if (num(t.value) > 0) startRest();
+});
+
+// Enter in the body weight field logs it.
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'bw-input') $('[data-act="bw-log"]')?.click();
+});
+
 $('#settings-btn').addEventListener('click', openSettings);
 
 /* ---------- Boot ---------- */
 applyTheme();
 render();
+renderRest();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }

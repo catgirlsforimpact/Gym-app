@@ -179,3 +179,35 @@ main { max-width: 640px; margin: 0 auto; padding: 4px 20px 24px; }
   background: var(--accent); color: var(--accent-text); padding: 10px 16px; border-radius: 99px;
   font-size: 14px; z-index: 30; animation: up .2s ease-out;
 }
+
+/* Rest timer bar (sits just above the tab bar) */
+body.resting { padding-bottom: calc(132px + env(safe-area-inset-bottom)); }
+.rest-bar {
+  position: fixed; z-index: 15; left: 12px; right: 12px;
+  bottom: calc(68px + env(safe-area-inset-bottom));
+  max-width: 616px; margin: 0 auto; overflow: hidden;
+  display: flex; align-items: center; gap: 6px;
+  background: var(--accent); color: var(--accent-text);
+  border-radius: 14px; padding: 8px 8px 8px 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.15); animation: up .2s ease-out;
+}
+.rest-fill {
+  position: absolute; inset: 0; transform-origin: left; pointer-events: none;
+  background: var(--accent-text); opacity: .1; transition: transform .25s linear;
+}
+.rest-label { font-size: 13px; opacity: .7; }
+.rest-time { flex: 1; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rest-bar button {
+  position: relative; font-size: 14px; padding: 7px 10px; border-radius: 9px;
+  background: color-mix(in srgb, var(--accent-text) 14%, transparent); color: var(--accent-text);
+}
+
+/* Template set stepper */
+.stepper { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stepper button {
+  width: 28px; height: 28px; border-radius: 8px; background: var(--soft); color: var(--text); font-size: 16px; line-height: 1;
+}
+.stepper span { min-width: 44px; text-align: center; }
+
+.bw-now { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+body.resting .toast { bottom: calc(140px + env(safe-area-inset-bottom)); }
