@@ -30,10 +30,12 @@
 
 :root[data-theme="pink"] {
   --bg: #ffedf4; --surface: #fff7fb; --text: #4a1d33; --muted: #8c4e68;
-  --line: #fbd3e3; --accent: #d1306b; --accent-text: #ffffff; --soft: #ffd9e8;
-  --danger: #b03a3a; --chart: #d1306b;
+  --line: #fbd3e3; --accent: #f07fa8; --accent-text: #4a1d33; --soft: #ffe2ed;
+  --danger: #b03a3a; --chart: #e2588c;
   --motivate-fg: #3a3537; /* soft near-black on the motivational card */
 }
+/* Light pink accent: bars use the slightly richer chart pink so they stand out from their tracks */
+:root[data-theme="pink"] .goal-bar span, :root[data-theme="pink"] .mfill { background: var(--chart); }
 :root[data-theme="pink"] .chart .area { opacity: .1; }
 :root[data-theme="green"] {
   --bg: #f1f8f3; --surface: #fbfefc; --text: #1d3a2a; --muted: #4f735d;
