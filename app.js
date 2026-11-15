@@ -66,6 +66,17 @@ function load() {
         delete ex.group;
       });
     }
+    // "Arms" is split into Biceps and Triceps (built-in exercises; your own keep what you chose).
+    if (s.exercises.some(ex => !ex.custom && ex.groups.includes('Arms'))) {
+      keepCopy(BEFORE_UPDATE_KEY, raw);
+      s.exercises.forEach(ex => {
+        const def = !ex.custom && DEFAULT_EXERCISES.find(d => d.id === ex.id);
+        if (!def || !ex.groups.includes('Arms')) return;
+        const arms = def.groups.filter(g => g === 'Biceps' || g === 'Triceps');
+        ex.groups = [...new Set(ex.groups.flatMap(g => g === 'Arms' ? arms : [g]))];
+        if (!ex.groups.length) ex.groups = [...def.groups];
+      });
+    }
     // Add any new built-in exercises shipped after first launch.
     const have = new Set(s.exercises.map(e => e.id));
     DEFAULT_EXERCISES.forEach(e => { if (!have.has(e.id)) s.exercises.push({ ...e, tips: [...e.tips], note: '', custom: false }); });
@@ -201,7 +212,7 @@ function toast(msg, ms = 1800, cls = '') {
 const lastPhrase = {};
 // Lower body = any leg, glute or hip group (built-in or your own, e.g. "Quads", "Hamstrings"),
 // plus deadlifts, which sit under Back but mostly train glutes and hamstrings.
-const LOWER_BODY_GROUP = /leg|glute|quad|hamstring|calf|calves|hip|adduct|abduct|lower/i;
+const LOWER_BODY_GROUP = /leg|glute|quad|hamstring|calf|calves|hip|adduct|abduct|lower body/i;
 const LOWER_BODY_IDS = ['deadlift', 'sumo-deadlift', 'rdl', 'single-leg-rdl', 'good-morning'];
 const isLowerBody = exerciseId => {
   const ex = exById(exerciseId);

@@ -4,7 +4,7 @@ const TIPS_VERSION = 2;
 // Users can edit tips / add their own exercises in the app.
 // Each exercise lists its muscle groups, main one first.
 // Order of the muscle-group filters in the Exercises tab.
-const MUSCLE_GROUPS = ['Glutes', 'Quads', 'Hamstrings', 'Calves', 'Adductors', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core'];
+const MUSCLE_GROUPS = ['Glutes', 'Quads', 'Hamstrings', 'Calves', 'Adductors', 'Back', 'Chest', 'Shoulders', 'Biceps', 'Triceps', 'Core'];
 const DEFAULT_EXERCISES = [
   { id: 'squat', name: 'Back Squat', groups: ['Quads', 'Glutes'], tips: [
     'Bar sits on upper traps, hands just outside shoulders.',
@@ -59,33 +59,33 @@ const DEFAULT_EXERCISES = [
     'Lock out by squeezing glutes — don\'t lean back.',
     'Keep your lats tight (think "squeeze your armpits") so the bar stays close.',
     'If your back starts to round, the weight is too heavy.' ] },
-  { id: 'pullup', name: 'Pull-up', groups: ['Back', 'Arms'], tips: [
+  { id: 'pullup', name: 'Pull-up', groups: ['Back', 'Biceps'], tips: [
     'Start from a dead hang, shoulders packed down.',
     'Drive elbows down toward your hips.',
     'Chin over the bar, lower under control.',
     'Pull your chest toward the bar, not just your chin.',
     'No swinging. If you need momentum, use a band for help.' ] },
-  { id: 'row', name: 'Barbell Row', groups: ['Back', 'Arms'], tips: [
+  { id: 'row', name: 'Barbell Row', groups: ['Back', 'Biceps'], tips: [
     'Hinge to roughly 45°, flat back.',
     'Pull the bar to your lower ribs / belly button.',
     'Lead with the elbows, squeeze shoulder blades together.',
     'Keep your torso angle fixed. If you stand up more each rep, the weight is too heavy.',
     'Keep the bar close, roughly over your mid-foot.',
     'Lower it under control along the same path.' ] },
-  { id: 'lat-pulldown', name: 'Lat Pulldown', groups: ['Back', 'Arms'], tips: [
+  { id: 'lat-pulldown', name: 'Lat Pulldown', groups: ['Back', 'Biceps'], tips: [
     'Slight lean back, chest up.',
     'Pull the bar to your upper chest, not behind the neck.',
     'Let the shoulders fully reach up on each rep.',
     'Start each rep by pulling your shoulder blades down, then bend the arms.',
     'Don\'t lean far back. That turns it into a row.',
     'Take 2–3 seconds to let the bar back up.' ] },
-  { id: 'cable-row', name: 'Seated Cable Row', groups: ['Back', 'Arms'], tips: [
+  { id: 'cable-row', name: 'Seated Cable Row', groups: ['Back', 'Biceps'], tips: [
     'Sit tall, don\'t rock with the torso.',
     'Pull handle to your stomach, elbows close.',
     'Pause and squeeze before returning.',
     'Keep your shoulders down, away from your ears.',
     'If you\'re swaying, the weight is too heavy.' ] },
-  { id: 'bench', name: 'Bench Press', groups: ['Chest', 'Shoulders', 'Arms'], tips: [
+  { id: 'bench', name: 'Bench Press', groups: ['Chest', 'Shoulders', 'Triceps'], tips: [
     'Shoulder blades pinched back and down, slight arch.',
     'Feet planted, drive through the floor.',
     'Lower to lower chest with elbows ~45–70° from torso.',
@@ -99,15 +99,15 @@ const DEFAULT_EXERCISES = [
     'Keep forearms vertical; don\'t let the elbows drift in or out.',
     'Use the full range: lower all the way, press to full extension.',
     'Moderate weight for 10–20 reps works well here.' ] },
-  { id: 'pushup', name: 'Push-up', groups: ['Chest', 'Shoulders', 'Arms'], tips: [
+  { id: 'pushup', name: 'Push-up', groups: ['Chest', 'Shoulders', 'Triceps'], tips: [
     'Body in one straight line from head to heels.',
     'Hands just outside shoulders, elbows at ~45°.',
     'Chest touches the floor every rep.' ] },
-  { id: 'dip', name: 'Dip', groups: ['Chest', 'Arms'], tips: [
+  { id: 'dip', name: 'Dip', groups: ['Chest', 'Triceps'], tips: [
     'Lean slightly forward for chest, stay upright for triceps.',
     'Lower until shoulders are just below elbows.',
     'Keep shoulders down, away from your ears.' ] },
-  { id: 'ohp', name: 'Overhead Press', groups: ['Shoulders', 'Arms'], tips: [
+  { id: 'ohp', name: 'Overhead Press', groups: ['Shoulders', 'Triceps'], tips: [
     'Squeeze glutes and brace — no leaning back.',
     'Bar starts on front delts, forearms vertical.',
     'Move your head back, then push it "through the window" at lockout.',
@@ -124,12 +124,12 @@ const DEFAULT_EXERCISES = [
     'Rope at upper-chest to face height.',
     'Pull toward your forehead, hands apart.',
     'Finish with external rotation — "double biceps" pose.' ] },
-  { id: 'curl', name: 'Biceps Curl', groups: ['Arms'], tips: [
+  { id: 'curl', name: 'Biceps Curl', groups: ['Biceps'], tips: [
     'Elbows pinned to your sides.',
     'No swinging — if you need momentum, lower the weight.',
     'Squeeze at the top, lower slowly.',
     'Keep your wrists straight, in line with your forearms.' ] },
-  { id: 'triceps-pushdown', name: 'Triceps Pushdown', groups: ['Arms'], tips: [
+  { id: 'triceps-pushdown', name: 'Triceps Pushdown', groups: ['Triceps'], tips: [
     'Elbows tucked and fixed.',
     'Fully extend and squeeze at the bottom.',
     'Only the forearms move.',
