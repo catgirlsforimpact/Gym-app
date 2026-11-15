@@ -18,6 +18,7 @@ function defaultState() {
     restSeconds: 90,
     autoRest: true, // start rest timer when a set's reps are entered
     restEnd: null,  // timestamp (ms) when current rest ends
+    motivation: true, // show motivational phrases
   };
 }
 
@@ -104,12 +105,41 @@ function exerciseHistory(id) {
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
-function toast(msg) {
+function toast(msg, ms = 1800, cls = '') {
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const el = document.createElement('div');
-  el.className = 'toast'; el.textContent = msg;
+  el.className = `toast ${cls}`; el.textContent = msg;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1800);
+  setTimeout(() => el.remove(), ms);
+}
+
+/* ---------- Motivation ---------- */
+const lastPhrase = {};
+// Random phrase from a pool, never the same one twice in a row.
+function phrase(kind, vars = {}) {
+  const pool = PHRASES[kind] || [];
+  if (!pool.length) return '';
+  let i = Math.floor(Math.random() * pool.length);
+  if (pool.length > 1 && i === lastPhrase[kind]) i = (i + 1) % pool.length;
+  lastPhrase[kind] = i;
+  return pool[i].replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
+}
+
+// Which milestone each exercise last celebrated, so editing a set doesn't repeat it.
+const celebrated = {};
+function checkExerciseMilestone(i) {
+  const a = state.active; if (!a || !state.motivation) return;
+  const en = a.entries[i]; if (!en) return;
+  const total = en.sets.length;
+  const done = en.sets.filter(s => num(s.r) > 0).length;
+  let kind = null;
+  if (done === total) kind = 'exerciseDone';
+  else if (total >= 2 && done === total - 1) kind = 'oneSetLeft';
+  const key = `${a.id}:${en.exerciseId}:${i}`;
+  const status = kind && `${kind}:${total}`;
+  if (!kind || celebrated[key] === status) return;
+  celebrated[key] = status;
+  toast(phrase(kind, { exercise: exById(en.exerciseId)?.name || 'that' }), 3500, 'motivate');
 }
 
 /* ---------- Charts (tiny SVG, no deps) ---------- */
@@ -294,7 +324,26 @@ function finishWorkout() {
   state.active = null;
   state.restEnd = null; renderRest();
   save(); render();
-  toast(prs.length ? `New PR: ${prs.join(', ')} 🎉` : 'Workout saved');
+  showWorkoutComplete(a, prs);
+}
+
+function showWorkoutComplete(w, prs) {
+  document.querySelectorAll('.toast').forEach(t => t.remove()); // the finish screen takes over
+  const sets = w.entries.reduce((t, en) => t + en.sets.length, 0);
+  const vol = workoutVolume(w);
+  openSheet(`
+    <div class="celebrate">
+      <div class="label" style="margin-top:4px">Workout complete</div>
+      ${state.motivation ? `<p class="celebrate-phrase">${esc(phrase('workoutDone'))}</p>` : `<p class="celebrate-phrase">Nice work.</p>`}
+      <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><div class="v">${fmtDuration(w.duration)}</div><div class="k">Time</div></div>
+        <div class="stat"><div class="v">${sets}</div><div class="k">Sets</div></div>
+        <div class="stat"><div class="v">${vol >= 10000 ? fmt(vol / 1000) + 'k' : fmt(vol)}</div><div class="k">${state.unit} lifted</div></div>
+      </div>
+      ${prs.length ? `<div class="card pr-card">🏆 New personal record${prs.length > 1 ? 's' : ''}: <strong>${prs.map(esc).join(', ')}</strong></div>` : ''}
+      <button class="btn block" style="margin-top:20px" data-act="close-sheet">Done</button>
+    </div>
+  `);
 }
 
 /* ---------- Rest timer ---------- */
@@ -792,6 +841,11 @@ function openSettings() {
       <input type="checkbox" id="auto-rest" ${state.autoRest ? 'checked' : ''} style="width:auto;margin:0" />
       Start automatically after logging a set
     </label>
+    <div class="label">Motivation</div>
+    <label class="row small" style="cursor:pointer">
+      <input type="checkbox" id="motivation" ${state.motivation ? 'checked' : ''} style="width:auto;margin:0" />
+      Show motivational messages
+    </label>
     <div class="label">Appearance</div>
     <div class="seg">${['auto', 'light', 'dark', 'pink'].map(t => `<button class="${state.theme === t ? 'active' : ''}" data-act="theme" data-v="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div>
     <div class="label">Your data</div>
@@ -802,6 +856,7 @@ function openSettings() {
     </div>
   `, sheet => {
     $('#auto-rest', sheet).addEventListener('change', e => { state.autoRest = e.target.checked; save(); });
+    $('#motivation', sheet).addEventListener('change', e => { state.motivation = e.target.checked; save(); });
     $('#import-file', sheet).addEventListener('change', async e => {
       const file = e.target.files[0]; if (!file) return;
       try {
@@ -968,11 +1023,13 @@ document.addEventListener('input', e => {
   }
 });
 
-// Auto-start the rest timer once a set's reps are filled in (fires when the field loses focus).
+// Once a set's reps are filled in (fires when the field loses focus):
+// cheer on milestones and auto-start the rest timer.
 document.addEventListener('change', e => {
   const t = e.target;
-  if (!state.active || !state.autoRest || !t.dataset.set?.endsWith(':r')) return;
-  if (num(t.value) > 0) startRest();
+  if (!state.active || !t.dataset.set?.endsWith(':r') || num(t.value) <= 0) return;
+  checkExerciseMilestone(+t.dataset.set.split(':')[0]);
+  if (state.autoRest) startRest();
 });
 
 // Enter in the body weight field logs it.
