@@ -22,7 +22,7 @@ const PHRASES = {
     'Last set. The body you want is built on sets like this one.',
     'One more set. You\'ll see this in the mirror, so make it count.',
     'Last set. That dress is going to fit differently. Earn it.',
-    'One set left. Toned doesn\'t happen on easy sets.',
+    'One set left. Definition doesn\'t happen on easy sets.',
     'Last set, girl. Sleek and strong, like a cat. Finish it.',
   ],
 
@@ -45,7 +45,6 @@ const PHRASES = {
     '{exercise} done. That\'s how you build a body that turns heads. Next.',
     'Done. Every rep is changing your shape. Don\'t stop now.',
     '{exercise} done. Better posture, better shape, better fit in everything you wear. Next.',
-    'Done. The mirror will show this soon. Keep moving.',
     '{exercise} done. Lean and strong like a cat. Next one.',
   ],
 
@@ -68,7 +67,6 @@ const PHRASES = {
     'Good girl. You\'re building a body that feels as good as it looks.',
     'Every workout shows a little more. Be proud of how far you\'ve come.',
     'Good girl. That little black dress is going to look even better on you.',
-    'You\'re getting stronger and more toned every week. Great work today.',
     'Graceful and strong, like a cat. Lovely work today, girl.',
   ],
 
@@ -81,9 +79,7 @@ const PHRASES = {
     'Sink low like a cat about to pounce. Last set.',
     'Last set. This is how you build the shape you want.',
     'One more set. The legs you want are on the other side of it.',
-    'Last set. Rounder glutes are built right here.',
     'One more set. Your legs will look amazing in that dress, so finish it.',
-    'Last set. Lifted, toned glutes don\'t come from easy reps.',
     'One set left. Your jeans will fit better because of this one.',
     'Last set. Long, strong cat legs. Earn them.',
   ],
@@ -98,7 +94,7 @@ const PHRASES = {
     '{exercise} done. You\'ll see this one in the mirror. Next.',
     'Done. Every set is shaping the body you\'re after. Keep going.',
     '{exercise} done. That\'s how glutes get lifted. Next.',
-    'Done. Your legs are getting more toned every week. Keep going.',
+    'Done. Your legs are getting more defined every week. Keep going.',
     '{exercise} done. You\'ll feel the difference in your jeans. Next.',
     'Done. Every set like this makes that short dress look better. Next one.',
     '{exercise} done. Sculpted legs are built one exercise at a time. Keep moving.',
@@ -117,6 +113,6 @@ const PHRASES = {
     'Your glutes are getting rounder and stronger. Great work today.',
     'Good girl. Your favourite jeans will fit better every week.',
     'Every leg day is shaping your silhouette. Be proud of today.',
-    'Strong, toned legs, the graceful kind a cat would be proud of. Good work, girl.',
+    'Strong, shapely legs, the graceful kind a cat would be proud of. Good work, girl.',
   ],
 };
