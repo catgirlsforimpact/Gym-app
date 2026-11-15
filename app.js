@@ -1060,14 +1060,14 @@ function muscleSection() {
     const zone = v >= 20 ? 'high' : v >= 10 ? 'good' : 'low';
     return `<div class="mrow">
       <span class="mname">${esc(g)}${lower.includes(g) ? '' : ''}</span>
-      <span class="mbar"><span class="mband"></span><span class="mfill ${zone}" style="width:${pct}%"></span></span>
+      <span class="mbar"><span class="mfill ${zone}" style="width:${pct}%"></span></span>
       <span class="mval">${fmt(v)}</span>
     </div>`;
   }).join('');
   return `<div class="label">Sets per muscle · last 7 days</div>
     <div class="card">
       ${rows || '<div class="muted small">No sets in the last 7 days yet.</div>'}
-      <div class="small muted" style="margin-top:10px">The shaded part of each bar is 10–20 sets, a common weekly target for growth. The main muscle of an exercise counts a full set, helper muscles half.</div>
+      <div class="small muted" style="margin-top:10px">A full bar is 20 sets. Around 10–20 sets a week per muscle is a common target for growth. The main muscle of an exercise counts a full set, helper muscles half.</div>
     </div>`;
 }
 
