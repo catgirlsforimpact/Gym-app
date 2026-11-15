@@ -19,6 +19,11 @@ function defaultState() {
     autoRest: true, // start rest timer when a set's reps are entered
     restEnd: null,  // timestamp (ms) when current rest ends
     motivation: true, // show motivational phrases
+    // Your edits to the phrase pools: built-in phrases you cut, and your own additions.
+    phraseEdits: {
+      removed: { oneSetLeft: [], exerciseDone: [], workoutDone: [] },
+      custom: { oneSetLeft: [], exerciseDone: [], workoutDone: [] },
+    },
   };
 }
 
@@ -114,14 +119,31 @@ function toast(msg, ms = 1800, cls = '') {
 }
 
 /* ---------- Motivation ---------- */
+const PHRASE_KINDS = [
+  { key: 'oneSetLeft', label: 'One set left' },
+  { key: 'exerciseDone', label: 'Exercise done' },
+  { key: 'workoutDone', label: 'Workout done' },
+];
+function phraseEdits(kind) {
+  const pe = state.phraseEdits ||= { removed: {}, custom: {} };
+  pe.removed ||= {}; pe.custom ||= {};
+  pe.removed[kind] ||= []; pe.custom[kind] ||= [];
+  return { removed: pe.removed[kind], custom: pe.custom[kind] };
+}
+// Active phrases: built-ins you haven't cut, plus your own.
+function phrasePool(kind) {
+  const { removed, custom } = phraseEdits(kind);
+  return [...(PHRASES[kind] || []).filter(p => !removed.includes(p)), ...custom];
+}
+
 const lastPhrase = {};
-// Random phrase from a pool, never the same one twice in a row.
+// Random phrase from a pool, never the same one twice in a row. '' if the pool is empty.
 function phrase(kind, vars = {}) {
-  const pool = PHRASES[kind] || [];
+  const pool = phrasePool(kind);
   if (!pool.length) return '';
   let i = Math.floor(Math.random() * pool.length);
-  if (pool.length > 1 && i === lastPhrase[kind]) i = (i + 1) % pool.length;
-  lastPhrase[kind] = i;
+  if (pool.length > 1 && pool[i] === lastPhrase[kind]) i = (i + 1) % pool.length;
+  lastPhrase[kind] = pool[i];
   return pool[i].replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
 }
 
@@ -139,7 +161,8 @@ function checkExerciseMilestone(i) {
   const status = kind && `${kind}:${total}`;
   if (!kind || celebrated[key] === status) return;
   celebrated[key] = status;
-  toast(phrase(kind, { exercise: exById(en.exerciseId)?.name || 'that' }), 3500, 'motivate');
+  const text = phrase(kind, { exercise: exById(en.exerciseId)?.name || 'that' });
+  if (text) toast(text, 3500, 'motivate');
 }
 
 /* ---------- Charts (tiny SVG, no deps) ---------- */
@@ -334,7 +357,7 @@ function showWorkoutComplete(w, prs) {
   openSheet(`
     <div class="celebrate">
       <div class="label" style="margin-top:4px">Workout complete</div>
-      ${state.motivation ? `<p class="celebrate-phrase">${esc(phrase('workoutDone'))}</p>` : `<p class="celebrate-phrase">Nice work.</p>`}
+      ${(t => t ? `<p class="celebrate-phrase">${esc(t)}</p>` : '<div style="height:14px"></div>')(state.motivation ? phrase('workoutDone') : '')}
       <div class="stats" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat"><div class="v">${fmtDuration(w.duration)}</div><div class="k">Time</div></div>
         <div class="stat"><div class="v">${sets}</div><div class="k">Sets</div></div>
@@ -846,6 +869,7 @@ function openSettings() {
       <input type="checkbox" id="motivation" ${state.motivation ? 'checked' : ''} style="width:auto;margin:0" />
       Show motivational messages
     </label>
+    <button class="btn ghost sm" style="margin-top:12px" data-act="edit-phrases">Edit phrases</button>
     <div class="label">Appearance</div>
     <div class="seg">${['auto', 'light', 'dark', 'pink'].map(t => `<button class="${state.theme === t ? 'active' : ''}" data-act="theme" data-v="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div>
     <div class="label">Your data</div>
@@ -866,6 +890,57 @@ function openSettings() {
         state = { ...defaultState(), ...data }; save(); applyTheme(); closeSheet(); render(); toast('Backup restored');
       } catch { toast('That file doesn’t look like a backup'); }
     });
+  });
+}
+
+/* ---------- Phrase editor ---------- */
+let phraseKind = 'oneSetLeft';
+
+// Show {exercise} as a small tag so it's clear it gets replaced.
+function phraseHtml(p) {
+  return esc(p).replace(/\{exercise\}/g, '<span class="tag">exercise</span>');
+}
+
+function openPhraseEditor(keepScroll = false) {
+  const sheet = $('#sheet');
+  const scroll = keepScroll ? sheet.scrollTop : 0;
+  const kind = phraseKind;
+  const { removed, custom } = phraseEdits(kind);
+  const builtIn = (PHRASES[kind] || []).filter(p => !removed.includes(p));
+  const active = [...builtIn.map(p => ({ p, custom: false })), ...custom.map(p => ({ p, custom: true }))];
+  const cut = (PHRASES[kind] || []).filter(p => removed.includes(p));
+  openSheet(`
+    <button class="link" data-act="back-settings">‹ Settings</button>
+    <h2 style="margin-top:8px">Motivational phrases</h2>
+    <div class="seg" style="margin-top:14px;display:flex">
+      ${PHRASE_KINDS.map(k => `<button style="flex:1" class="${k.key === kind ? 'active' : ''}" data-act="phrase-kind" data-v="${k.key}">${k.label}</button>`).join('')}
+    </div>
+
+    <div class="label">In use · ${active.length}</div>
+    ${active.length ? `<div class="list">${active.map(({ p, custom: own }) => `
+      <div class="list-item phrase-row">
+        <span class="phrase-text">${phraseHtml(p)}${own ? ' <span class="tag">yours</span>' : ''}</span>
+        <button class="phrase-cut" data-act="phrase-cut" data-own="${own ? 1 : 0}" data-p="${esc(p)}" aria-label="Remove phrase">×</button>
+      </div>`).join('')}</div>`
+      : `<div class="muted small">No phrases left here — this moment will stay quiet. Restore some below or add your own.</div>`}
+
+    <div class="label">Add your own</div>
+    <div class="row">
+      <input id="phrase-new" placeholder="e.g. You're stronger than you think 💗" maxlength="140" />
+      <button class="btn sm" data-act="phrase-add">Add</button>
+    </div>
+    ${kind !== 'workoutDone' ? `<div class="small muted" style="margin-top:6px">Tip: type {exercise} to include the exercise name.</div>` : ''}
+
+    ${cut.length ? `
+      <div class="row between"><div class="label">Removed · ${cut.length}</div><button class="link" style="margin-top:18px" data-act="phrase-restore-all">Restore all</button></div>
+      <div class="list">${cut.map(p => `
+        <div class="list-item phrase-row removed">
+          <span class="phrase-text">${phraseHtml(p)}</span>
+          <button class="link" data-act="phrase-restore" data-p="${esc(p)}">Restore</button>
+        </div>`).join('')}</div>` : ''}
+  `, sh => {
+    sh.scrollTop = scroll;
+    $('#phrase-new', sh).addEventListener('keydown', e => { if (e.key === 'Enter') $('[data-act="phrase-add"]', sh).click(); });
   });
 }
 
@@ -1000,6 +1075,32 @@ document.addEventListener('click', e => {
     case 'bw-del':
       state.bodyweight = state.bodyweight.filter(b => b.id !== id); save(); showBodyweightHistory(); render();
       break;
+    // Phrase editor
+    case 'edit-phrases': phraseKind = 'oneSetLeft'; openPhraseEditor(); break;
+    case 'back-settings': openSettings(); break;
+    case 'phrase-kind': phraseKind = el.dataset.v; openPhraseEditor(); break;
+    case 'phrase-cut': {
+      const { removed, custom } = phraseEdits(phraseKind);
+      const p = el.dataset.p;
+      if (el.dataset.own === '1') custom.splice(custom.indexOf(p), 1);
+      else if (!removed.includes(p)) removed.push(p);
+      save(); openPhraseEditor(true);
+      break;
+    }
+    case 'phrase-restore': {
+      const { removed } = phraseEdits(phraseKind);
+      removed.splice(removed.indexOf(el.dataset.p), 1); save(); openPhraseEditor(true);
+      break;
+    }
+    case 'phrase-restore-all': phraseEdits(phraseKind).removed.length = 0; save(); openPhraseEditor(true); break;
+    case 'phrase-add': {
+      const input = $('#phrase-new'); const t = input.value.trim();
+      if (!t) break;
+      if (phrasePool(phraseKind).includes(t)) { toast('Already in the list'); break; }
+      phraseEdits(phraseKind).custom.push(t); save(); openPhraseEditor(true);
+      setTimeout(() => $('#phrase-new')?.focus(), 30);
+      break;
+    }
     case 'export': {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
