@@ -24,6 +24,7 @@ function defaultState() {
     autoRest: true, // start rest timer when a set's reps are entered
     restEnd: null,  // timestamp (ms) when current rest ends
     motivation: true, // show motivational phrases
+    repRange: [8, 13], // app-wide rep range for progression suggestions
   };
 }
 
@@ -370,9 +371,10 @@ views.train = () => {
 /* ---------- Progression (double progression) ----------
    Work in a rep range. Add one rep each session at the same weight; once every
    working set reaches the top of the range, add weight and go back to the bottom. */
-function repRange(ex) {
-  const g = exGroups(ex);
-  return (g.includes('Calves') || g.includes('Core') || ex?.id === 'frog-pump') ? [12, 20] : [8, 12];
+// The app-wide rep range from Settings (default 8–13), used for every exercise.
+function repRange() {
+  const [lo, hi] = Array.isArray(state.repRange) ? state.repRange.map(Number) : [];
+  return lo >= 1 && hi > lo && hi <= 50 ? [lo, hi] : [8, 13];
 }
 function weightStep(ex) {
   // single small muscles (curls, pushdowns, lateral raises) go up 1 kg; everything else 2.5 kg
@@ -393,7 +395,7 @@ function suggestNext(exerciseId) {
   const count = sets.length;
   if (ex.id === 'plank') return { kind: 'time', w: 0, r: minR + 5, count, label: '+5 seconds', last };
   if (topW <= 0) return { kind: 'reps', w: 0, r: minR + 1, count, label: '+1 rep', last };
-  const [lo, hi] = repRange(ex);
+  const [lo, hi] = repRange();
   if (minR >= hi) {
     const step = weightStep(ex);
     return { kind: 'weight', w: roundW(topW + step), r: lo, count, label: `+${fmt(step)} kg`, last };
@@ -430,7 +432,7 @@ function entryBlock(en, i) {
         `).join('')}
       </div>
       ${sg ? `<div class="suggest">
-        <div class="suggest-text"><span class="suggest-label">Target</span> ${esc(suggestText(sg))}${sg.count > 1 ? ` · ${sg.count} sets` : ''} <span class="suggest-tag ${sg.kind}">${esc(sg.label)}</span></div>
+        <div class="suggest-text"><span class="suggest-label">Suggested</span> ${esc(suggestText(sg))}${sg.count > 1 ? ` · ${sg.count} sets` : ''} <span class="suggest-tag ${sg.kind}">${esc(sg.label)}</span></div>
         ${weightsMissing ? `<button class="link" data-act="apply-suggest" data-i="${i}">Use</button>` : ''}
       </div>` : ''}
       <div class="row between" style="margin-top:10px">
@@ -1118,6 +1120,14 @@ function openSettings() {
       <input type="checkbox" id="auto-rest" ${state.autoRest ? 'checked' : ''} style="width:auto;margin:0" />
       Start automatically after logging a set
     </label>
+    <div class="label">Rep range for suggestions</div>
+    <div class="row" style="gap:8px">
+      <input id="rep-lo" inputmode="numeric" value="${repRange()[0]}" style="width:72px;text-align:center" aria-label="Lowest reps" />
+      <span class="muted">to</span>
+      <input id="rep-hi" inputmode="numeric" value="${repRange()[1]}" style="width:72px;text-align:center" aria-label="Highest reps" />
+      <span class="muted small">reps</span>
+    </div>
+    <div class="small muted" style="margin-top:6px">Add a rep each time. When every set reaches the top, the app suggests more weight. It's only a suggestion; log whatever you actually do.</div>
     <div class="label">Motivation</div>
     <label class="row small" style="cursor:pointer">
       <input type="checkbox" id="motivation" ${state.motivation ? 'checked' : ''} style="width:auto;margin:0" />
@@ -1140,6 +1150,13 @@ function openSettings() {
   `, sheet => {
     $('#auto-rest', sheet).addEventListener('change', e => { state.autoRest = e.target.checked; save(); });
     $('#motivation', sheet).addEventListener('change', e => { state.motivation = e.target.checked; save(); });
+    const saveRange = () => {
+      const lo = parseInt($('#rep-lo', sheet).value, 10), hi = parseInt($('#rep-hi', sheet).value, 10);
+      if (lo >= 1 && hi > lo && hi <= 50) { state.repRange = [lo, hi]; save(); if (tab === 'train') render(); }
+      else { toast('Use a range like 8 to 13'); $('#rep-lo', sheet).value = repRange()[0]; $('#rep-hi', sheet).value = repRange()[1]; }
+    };
+    $('#rep-lo', sheet).addEventListener('change', saveRange);
+    $('#rep-hi', sheet).addEventListener('change', saveRange);
     $('#import-file', sheet).addEventListener('change', async e => {
       const file = e.target.files[0]; if (!file) return;
       try {
