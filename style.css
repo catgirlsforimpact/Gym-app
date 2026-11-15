@@ -10,7 +10,7 @@
   --danger: #b4443a;
   --chart: var(--text);
   --motivate-bg: #ffffff;
-  --motivate-fg: #b8476b;
+  --motivate-fg: #5b3fa8;
   --motivate-line: #ebe7ef;
   --radius: 14px;
   --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
@@ -19,19 +19,20 @@
   :root:not([data-theme="light"]) {
     --bg: #111111; --surface: #1a1a1a; --text: #ececea; --muted: #7d7d78;
     --line: #2a2a2a; --accent: #ececea; --accent-text: #111111; --soft: #222222; --danger: #e07a6f;
-    --motivate-bg: #f6f4f8; --motivate-fg: #b8476b; --motivate-line: #ffffff;
+    --motivate-bg: #f6f4f8; --motivate-fg: #5b3fa8; --motivate-line: #ffffff;
   }
 }
 :root[data-theme="dark"] {
   --bg: #111111; --surface: #1a1a1a; --text: #ececea; --muted: #7d7d78;
   --line: #2a2a2a; --accent: #ececea; --accent-text: #111111; --soft: #222222; --danger: #e07a6f;
-  --motivate-bg: #f6f4f8; --motivate-fg: #b8476b; --motivate-line: #ffffff;
+  --motivate-bg: #f6f4f8; --motivate-fg: #5b3fa8; --motivate-line: #ffffff;
 }
 
 :root[data-theme="pink"] {
   --bg: #fdf2f5; --surface: #fffafb; --text: #4a2c37; --muted: #8f5f70;
   --line: #f3d9e1; --accent: #b8476b; --accent-text: #ffffff; --soft: #f9e3ea;
   --danger: #b03a3a; --chart: #b8476b;
+  --motivate-fg: #7b1e3a; /* wine red on the motivational card */
 }
 :root[data-theme="pink"] .chart .area { opacity: .1; }
 
