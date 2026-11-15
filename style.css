@@ -268,3 +268,5 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .plan-text.rest { color: var(--muted); font-weight: 400; }
 .plan-day.past .plan-text, .plan-day.past .plan-date .dom { opacity: .55; }
 .chips.wrap { flex-wrap: wrap; overflow: visible; }
+
+.recover-card { margin-top: 18px; border-color: var(--accent); }

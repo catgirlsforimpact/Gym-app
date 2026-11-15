@@ -2,6 +2,9 @@
 
 /* ---------- State & storage ---------- */
 const STORE_KEY = 'liftlog.v1';
+// Safety copies: never let a failed load or an update overwrite your only copy.
+const RESCUE_KEY = 'liftlog.v1.rescue';         // raw data that could not be read
+const BEFORE_UPDATE_KEY = 'liftlog.v1.before-update'; // raw data just before an app update changed it
 
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 
@@ -24,13 +27,35 @@ function defaultState() {
   };
 }
 
+// Store a safety copy, but never replace a copy that holds more of your data.
+function keepCopy(key, raw) {
+  try {
+    const size = r => { try { const d = JSON.parse(r); return (d.workouts?.length || 0) + (d.templates?.length || 0) + (d.notes?.length || 0); } catch { return -1; } };
+    const old = localStorage.getItem(key);
+    if (!old || size(raw) >= size(old)) localStorage.setItem(key, raw);
+  } catch {}
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
-    const saved = JSON.parse(raw);
+    let saved;
+    try { saved = JSON.parse(raw); } catch (err) {
+      // Unreadable data: keep it aside instead of saving an empty app over it.
+      keepCopy(RESCUE_KEY, raw);
+      console.error(err);
+      return defaultState();
+    }
+    if ((saved.tipsVersion || 1) < TIPS_VERSION) {
+      keepCopy(BEFORE_UPDATE_KEY, raw);
+    }
     const s = { ...defaultState(), ...saved };
     s.unit = 'kg'; // the app uses kilograms only
+    // Tolerate missing or damaged pieces instead of failing the whole load.
+    const def = defaultState();
+    ['exercises', 'workouts', 'templates', 'notes', 'bodyweight'].forEach(k => { if (!Array.isArray(s[k])) s[k] = def[k]; });
+    if (!s.plan || typeof s.plan !== 'object') s.plan = {};
     // Add any new built-in exercises shipped after first launch.
     const have = new Set(s.exercises.map(e => e.id));
     DEFAULT_EXERCISES.forEach(e => { if (!have.has(e.id)) s.exercises.push({ ...e, tips: [...e.tips], note: '', custom: false }); });
@@ -44,9 +69,24 @@ function load() {
     }
     return s;
   } catch (err) {
+    // Something went wrong while updating saved data: keep a copy before starting fresh.
+    try { const raw = localStorage.getItem(STORE_KEY); if (raw) keepCopy(RESCUE_KEY, raw); } catch {}
     console.error(err);
     return defaultState();
   }
+}
+
+// A saved copy that can be restored from Settings, if one exists and holds anything.
+function recoverableCopy() {
+  for (const key of [RESCUE_KEY, BEFORE_UPDATE_KEY]) {
+    try {
+      const raw = localStorage.getItem(key); if (!raw) continue;
+      const d = JSON.parse(raw);
+      const n = (d.workouts?.length || 0) + (d.templates?.length || 0) + (d.notes?.length || 0);
+      if (n) return { key, raw, workouts: d.workouts?.length || 0, templates: d.templates?.length || 0, notes: d.notes?.length || 0 };
+    } catch {}
+  }
+  return null;
 }
 
 let state = load();
@@ -1005,6 +1045,12 @@ function openSettings() {
     </label>
     <div class="label">Appearance</div>
     <div class="seg">${['auto', 'light', 'dark', 'pink'].map(t => `<button class="${state.theme === t ? 'active' : ''}" data-act="theme" data-v="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div>
+    ${(rc => rc && (rc.workouts > state.workouts.length || rc.templates > state.templates.length || rc.notes > state.notes.length) ? `
+      <div class="card recover-card">
+        <div style="font-weight:600">A saved copy of your data was found</div>
+        <div class="small muted" style="margin:4px 0 10px">${rc.workouts} workout${rc.workouts === 1 ? '' : 's'} · ${rc.templates} template${rc.templates === 1 ? '' : 's'} · ${rc.notes} note${rc.notes === 1 ? '' : 's'}</div>
+        <button class="btn sm" data-act="recover-data">Restore it</button>
+      </div>` : '')(recoverableCopy())}
     <div class="label">Your data</div>
     <p class="small muted" style="margin-top:0">Everything is stored on this device. Export a backup now and then.</p>
     <div class="row">
@@ -1203,6 +1249,18 @@ document.addEventListener('click', e => {
     case 'bw-del':
       state.bodyweight = state.bodyweight.filter(b => b.id !== id); save(); showBodyweightHistory(); render();
       break;
+    case 'recover-data': {
+      const rc = recoverableCopy(); if (!rc) break;
+      try {
+        localStorage.setItem(STORE_KEY + '.replaced', JSON.stringify(state)); // keep what we had, just in case
+        localStorage.setItem(STORE_KEY, rc.raw);
+        state = load();
+        const ok = state.workouts.length >= rc.workouts && state.templates.length >= rc.templates;
+        save(); applyTheme(); closeSheet(); render();
+        toast(ok ? 'Your data is back' : 'Only part of the copy could be restored');
+      } catch { toast('Could not restore the copy'); }
+      break;
+    }
     case 'export': {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
