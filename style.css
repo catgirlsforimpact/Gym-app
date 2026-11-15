@@ -32,7 +32,7 @@
   --bg: #fdf2f5; --surface: #fffafb; --text: #4a2c37; --muted: #8f5f70;
   --line: #f3d9e1; --accent: #b8476b; --accent-text: #ffffff; --soft: #f9e3ea;
   --danger: #b03a3a; --chart: #b8476b;
-  --motivate-fg: #7b1e3a; /* wine red on the motivational card */
+  --motivate-fg: #3a3537; /* soft near-black on the motivational card */
 }
 :root[data-theme="pink"] .chart .area { opacity: .1; }
 
