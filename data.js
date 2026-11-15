@@ -2,8 +2,11 @@
 // Bump TIPS_VERSION when built-in tips change, so saved libraries pick up the new ones.
 const TIPS_VERSION = 2;
 // Users can edit tips / add their own exercises in the app.
+// Each exercise lists its muscle groups, main one first.
+// Order of the muscle-group filters in the Exercises tab.
+const MUSCLE_GROUPS = ['Glutes', 'Quads', 'Hamstrings', 'Calves', 'Adductors', 'Back', 'Chest', 'Shoulders', 'Arms', 'Core'];
 const DEFAULT_EXERCISES = [
-  { id: 'squat', name: 'Back Squat', group: 'Legs', tips: [
+  { id: 'squat', name: 'Back Squat', groups: ['Quads', 'Glutes'], tips: [
     'Bar sits on upper traps, hands just outside shoulders.',
     'Brace your core before each rep — big breath into the belly.',
     'Knees track over toes; push them out on the way down.',
@@ -11,144 +14,144 @@ const DEFAULT_EXERCISES = [
     'Heels stay down. If they lift, work on ankle mobility.',
     'Hips and shoulders rise together out of the bottom.',
     'Set the bar in the rack at about armpit height so you don\'t tiptoe or half-squat to unrack it.' ] },
-  { id: 'front-squat', name: 'Front Squat', group: 'Legs', tips: [
+  { id: 'front-squat', name: 'Front Squat', groups: ['Quads', 'Glutes'], tips: [
     'Bar rests on front delts, elbows high.',
     'Stay upright — think "elbows up" out of the hole.',
     'Sit straight down between your heels.',
     'Use a slightly narrower stance than your back squat.',
     'Take a big breath and brace before every rep.',
     'Wrists sore? Try a cross-arm grip, or build up with goblet squats.' ] },
-  { id: 'rdl', name: 'Romanian Deadlift', group: 'Legs', tips: [
+  { id: 'rdl', name: 'Romanian Deadlift', groups: ['Hamstrings', 'Glutes'], tips: [
     'Soft knees, push hips back like closing a car door.',
     'Keep the bar dragging along your thighs.',
     'Stop when you feel a strong hamstring stretch; keep a neutral spine.',
     'Knees stay soft but mostly fixed. Bending them more turns it into a squat.',
     'Drive your hips forward to stand up; don\'t lean back at the top.' ] },
-  { id: 'lunge', name: 'Walking Lunge', group: 'Legs', tips: [
+  { id: 'lunge', name: 'Walking Lunge', groups: ['Quads', 'Glutes'], tips: [
     'Long enough stride that front shin stays near vertical.',
     'Back knee kisses the floor softly.',
     'Push through the front heel to step forward.',
     'Go slow. Rushing cuts your range of motion.',
     'Too hard? Shorten the stride or switch to reverse lunges.' ] },
-  { id: 'leg-press', name: 'Leg Press', group: 'Legs', tips: [
+  { id: 'leg-press', name: 'Leg Press', groups: ['Quads', 'Glutes'], tips: [
     'Feet shoulder-width, mid-platform.',
     'Lower until hips are about to curl off the pad — no further.',
     'Don\'t lock out knees hard at the top.',
     'Set the seat so your knees are at about 90° at the bottom.',
     'Push through your heels.',
     'Breathe out as you press, in as you lower.' ] },
-  { id: 'calf-raise', name: 'Calf Raise', group: 'Legs', tips: [
+  { id: 'calf-raise', name: 'Calf Raise', groups: ['Calves'], tips: [
     'Full stretch at the bottom, pause for a second.',
     'Rise as high as possible onto the big toe.',
     'Control the lowering — no bouncing.',
     'Stand on a step so your heels can drop below it.',
     'Keep a soft bend in the knees and your torso upright.' ] },
-  { id: 'hip-thrust', name: 'Hip Thrust', group: 'Glutes', tips: [
+  { id: 'hip-thrust', name: 'Hip Thrust', groups: ['Glutes', 'Hamstrings'], tips: [
     'Upper back on bench at shoulder-blade level.',
     'Tuck chin and keep ribs down; finish with a posterior pelvic tilt.',
     'Shins vertical at the top. Squeeze glutes for a beat.',
     'Keep reps slow and controlled. No bouncing out of the bottom.',
     'New to it? Get comfortable with glute bridges first, then add a barbell.' ] },
-  { id: 'deadlift', name: 'Deadlift', group: 'Back', tips: [
+  { id: 'deadlift', name: 'Deadlift', groups: ['Glutes', 'Hamstrings', 'Back'], tips: [
     'Bar over mid-foot, shins close to the bar.',
     'Pull the slack out of the bar before it leaves the floor.',
     'Push the floor away; hips and shoulders rise together.',
     'Lock out by squeezing glutes — don\'t lean back.',
     'Keep your lats tight (think "squeeze your armpits") so the bar stays close.',
     'If your back starts to round, the weight is too heavy.' ] },
-  { id: 'pullup', name: 'Pull-up', group: 'Back', tips: [
+  { id: 'pullup', name: 'Pull-up', groups: ['Back', 'Arms'], tips: [
     'Start from a dead hang, shoulders packed down.',
     'Drive elbows down toward your hips.',
     'Chin over the bar, lower under control.',
     'Pull your chest toward the bar, not just your chin.',
     'No swinging. If you need momentum, use a band for help.' ] },
-  { id: 'row', name: 'Barbell Row', group: 'Back', tips: [
+  { id: 'row', name: 'Barbell Row', groups: ['Back', 'Arms'], tips: [
     'Hinge to roughly 45°, flat back.',
     'Pull the bar to your lower ribs / belly button.',
     'Lead with the elbows, squeeze shoulder blades together.',
     'Keep your torso angle fixed. If you stand up more each rep, the weight is too heavy.',
     'Keep the bar close, roughly over your mid-foot.',
     'Lower it under control along the same path.' ] },
-  { id: 'lat-pulldown', name: 'Lat Pulldown', group: 'Back', tips: [
+  { id: 'lat-pulldown', name: 'Lat Pulldown', groups: ['Back', 'Arms'], tips: [
     'Slight lean back, chest up.',
     'Pull the bar to your upper chest, not behind the neck.',
     'Let the shoulders fully reach up on each rep.',
     'Start each rep by pulling your shoulder blades down, then bend the arms.',
     'Don\'t lean far back. That turns it into a row.',
     'Take 2–3 seconds to let the bar back up.' ] },
-  { id: 'cable-row', name: 'Seated Cable Row', group: 'Back', tips: [
+  { id: 'cable-row', name: 'Seated Cable Row', groups: ['Back', 'Arms'], tips: [
     'Sit tall, don\'t rock with the torso.',
     'Pull handle to your stomach, elbows close.',
     'Pause and squeeze before returning.',
     'Keep your shoulders down, away from your ears.',
     'If you\'re swaying, the weight is too heavy.' ] },
-  { id: 'bench', name: 'Bench Press', group: 'Chest', tips: [
+  { id: 'bench', name: 'Bench Press', groups: ['Chest', 'Shoulders', 'Arms'], tips: [
     'Shoulder blades pinched back and down, slight arch.',
     'Feet planted, drive through the floor.',
     'Lower to lower chest with elbows ~45–70° from torso.',
     'Press up and slightly back toward your face.',
     'Touch the chest and press. Don\'t bounce the bar.',
     'Keep your forearms vertical at the bottom.' ] },
-  { id: 'incline-db', name: 'Incline Dumbbell Press', group: 'Chest', tips: [
+  { id: 'incline-db', name: 'Incline Dumbbell Press', groups: ['Chest', 'Shoulders'], tips: [
     'Bench at 30–45°.',
     'Lower dumbbells to upper chest with a deep stretch.',
     'Press up in a slight arc, don\'t clang them together.',
     'Keep forearms vertical; don\'t let the elbows drift in or out.',
     'Use the full range: lower all the way, press to full extension.',
     'Moderate weight for 10–20 reps works well here.' ] },
-  { id: 'pushup', name: 'Push-up', group: 'Chest', tips: [
+  { id: 'pushup', name: 'Push-up', groups: ['Chest', 'Shoulders', 'Arms'], tips: [
     'Body in one straight line from head to heels.',
     'Hands just outside shoulders, elbows at ~45°.',
     'Chest touches the floor every rep.' ] },
-  { id: 'dip', name: 'Dip', group: 'Chest', tips: [
+  { id: 'dip', name: 'Dip', groups: ['Chest', 'Arms'], tips: [
     'Lean slightly forward for chest, stay upright for triceps.',
     'Lower until shoulders are just below elbows.',
     'Keep shoulders down, away from your ears.' ] },
-  { id: 'ohp', name: 'Overhead Press', group: 'Shoulders', tips: [
+  { id: 'ohp', name: 'Overhead Press', groups: ['Shoulders', 'Arms'], tips: [
     'Squeeze glutes and brace — no leaning back.',
     'Bar starts on front delts, forearms vertical.',
     'Move your head back, then push it "through the window" at lockout.',
     'Keep wrists stacked over elbows, not bent back.',
     'Stand with feet about hip-width apart for a stable base.',
     'Fully lock out at the top.' ] },
-  { id: 'lateral-raise', name: 'Lateral Raise', group: 'Shoulders', tips: [
+  { id: 'lateral-raise', name: 'Lateral Raise', groups: ['Shoulders'], tips: [
     'Slight bend in the elbows.',
     'Raise to shoulder height leading with the elbows.',
     'Go lighter than you think; control the descent.',
     'Don\'t shrug. Think of moving only the arms.',
     'No swinging. Momentum moves the stress into your shoulder joint.' ] },
-  { id: 'face-pull', name: 'Face Pull', group: 'Shoulders', tips: [
+  { id: 'face-pull', name: 'Face Pull', groups: ['Shoulders', 'Back'], tips: [
     'Rope at upper-chest to face height.',
     'Pull toward your forehead, hands apart.',
     'Finish with external rotation — "double biceps" pose.' ] },
-  { id: 'curl', name: 'Biceps Curl', group: 'Arms', tips: [
+  { id: 'curl', name: 'Biceps Curl', groups: ['Arms'], tips: [
     'Elbows pinned to your sides.',
     'No swinging — if you need momentum, lower the weight.',
     'Squeeze at the top, lower slowly.',
     'Keep your wrists straight, in line with your forearms.' ] },
-  { id: 'triceps-pushdown', name: 'Triceps Pushdown', group: 'Arms', tips: [
+  { id: 'triceps-pushdown', name: 'Triceps Pushdown', groups: ['Arms'], tips: [
     'Elbows tucked and fixed.',
     'Fully extend and squeeze at the bottom.',
     'Only the forearms move.',
     'Don\'t let the elbows drift forward. That brings the shoulders in.',
     'Start light and keep it strict.' ] },
-  { id: 'plank', name: 'Plank', group: 'Core', tips: [
+  { id: 'plank', name: 'Plank', groups: ['Core'], tips: [
     'Elbows under shoulders.',
     'Squeeze glutes and pull ribs down — no sagging hips.',
     'Log seconds as "reps" and 0 for weight.',
     'Don\'t pike your hips up. Head, hips and heels stay in one line.' ] },
-  { id: 'hanging-leg-raise', name: 'Hanging Leg Raise', group: 'Core', tips: [
+  { id: 'hanging-leg-raise', name: 'Hanging Leg Raise', groups: ['Core'], tips: [
     'Start from a still dead hang.',
     'Curl the pelvis up, not just the legs.',
     'Lower slowly to avoid swinging.' ] },
   // --- More lower body ---
-  { id: 'goblet-squat', name: 'Goblet Squat', group: 'Legs', tips: [
+  { id: 'goblet-squat', name: 'Goblet Squat', groups: ['Quads', 'Glutes'], tips: [
     'Hold the dumbbell vertically against your chest, elbows pointing down.',
     'Sit between your heels and let your elbows brush the inside of your knees.',
     'Keep your chest tall and drive up through the whole foot.',
     'Keep the weight tight to your chest so it doesn\'t pull you forward.',
     'Use your elbows to nudge your knees out if they cave in.' ] },
-  { id: 'bulgarian-split-squat', name: 'Bulgarian Split Squat', group: 'Legs', tips: [
+  { id: 'bulgarian-split-squat', name: 'Bulgarian Split Squat', groups: ['Quads', 'Glutes'], tips: [
     'Rear foot laces-down on a bench, front foot far enough forward that you can drop straight down.',
     'Lean the torso slightly forward for more glutes, stay upright for more quads.',
     'Lower until the back knee nearly touches the floor; push through the front heel.',
@@ -156,79 +159,79 @@ const DEFAULT_EXERCISES = [
     'Put the front foot slightly out to the side, not in line with the back foot, for balance.',
     'Don\'t let the front knee cave inward.',
     'Warm up with a bodyweight set first.' ] },
-  { id: 'reverse-lunge', name: 'Reverse Lunge', group: 'Legs', tips: [
+  { id: 'reverse-lunge', name: 'Reverse Lunge', groups: ['Glutes', 'Quads'], tips: [
     'Step back, not out to the side, and keep your hips square.',
     'Most of your weight stays on the front leg.',
     'Easier on the knees than forward lunges — good for control and balance.',
     'Lower until the front knee is at about 90° and the back knee lightly touches the floor.' ] },
-  { id: 'step-up', name: 'Step-up', group: 'Legs', tips: [
+  { id: 'step-up', name: 'Step-up', groups: ['Quads', 'Glutes'], tips: [
     'Box height so your thigh is about parallel when your foot is on it.',
     'Drive through the heel of the top foot — don\'t push off the back leg.',
     'Stand fully tall at the top, then lower slowly.',
     'Step back down with control and land softly with a bent knee.' ] },
-  { id: 'hack-squat', name: 'Hack Squat', group: 'Legs', tips: [
+  { id: 'hack-squat', name: 'Hack Squat', groups: ['Quads'], tips: [
     'Back and hips flat against the pad the whole time.',
     'Feet lower on the platform for more quads, higher for more glutes.',
     'Go as deep as you can while keeping your heels down.',
     'Adjust the shoulder pads so they sit snugly on your shoulders.',
     'Hold the handles for stability.' ] },
-  { id: 'leg-extension', name: 'Leg Extension', group: 'Legs', tips: [
+  { id: 'leg-extension', name: 'Leg Extension', groups: ['Quads'], tips: [
     'Line your knee up with the machine\'s pivot point.',
     'Pad sits just above your ankles.',
     'Squeeze your quads hard at the top for a second, lower under control.' ] },
-  { id: 'leg-curl', name: 'Leg Curl', group: 'Legs', tips: [
+  { id: 'leg-curl', name: 'Leg Curl', groups: ['Hamstrings'], tips: [
     'Knee lined up with the machine\'s pivot; hips pressed into the pad.',
     'Curl all the way, squeeze, then lower slowly — the lowering builds the most.',
     'Don\'t let your hips lift to cheat the weight up.',
     'Pull your toes toward your shins for a full range of motion.' ] },
-  { id: 'nordic-curl', name: 'Nordic Curl', group: 'Legs', tips: [
+  { id: 'nordic-curl', name: 'Nordic Curl', groups: ['Hamstrings'], tips: [
     'Anchor your ankles under something solid, kneel on a pad.',
     'Keep a straight line from knees to head — don\'t bend at the hips.',
     'Lower as slowly as you can, catch yourself with your hands, push back up.',
     'Use a band around your hips for help until you\'re stronger.',
     'Only go as low as you can control.' ] },
-  { id: 'sumo-deadlift', name: 'Sumo Deadlift', group: 'Legs', tips: [
+  { id: 'sumo-deadlift', name: 'Sumo Deadlift', groups: ['Glutes', 'Adductors', 'Hamstrings'], tips: [
     'Wide stance, toes turned out, hands inside your legs.',
     'Push your knees out over your toes and keep your chest up.',
     'Think "spread the floor" as you drive up; lock out with your glutes.',
     'Take the slack out of the bar before you pull. Don\'t relax at the bottom.',
     'Screw your feet into the floor to keep your knees from caving.',
     'If your hips shoot up first, push with your legs instead.' ] },
-  { id: 'single-leg-rdl', name: 'Single-leg RDL', group: 'Legs', tips: [
+  { id: 'single-leg-rdl', name: 'Single-leg RDL', groups: ['Hamstrings', 'Glutes'], tips: [
     'Soft knee on the standing leg, hips stay level — don\'t let one open up.',
     'Reach the free leg back as the torso tips forward, like a seesaw.',
     'Go slow; balance is part of the exercise.',
     'Don\'t lock the standing leg straight.',
     'If balance is hard, learn the staggered-stance RDL first.' ] },
-  { id: 'good-morning', name: 'Good Morning', group: 'Legs', tips: [
+  { id: 'good-morning', name: 'Good Morning', groups: ['Hamstrings', 'Glutes', 'Back'], tips: [
     'Bar on your upper back like a squat, knees slightly bent.',
     'Push your hips back with a flat back until you feel the hamstrings.',
     'Start light — this is about the stretch, not heavy weight.',
     'Keep the bar fixed on your back. It shouldn\'t drift.',
     'A barbell uncomfortable? Hold a dumbbell at your chest instead.' ] },
-  { id: 'glute-bridge', name: 'Glute Bridge', group: 'Glutes', tips: [
+  { id: 'glute-bridge', name: 'Glute Bridge', groups: ['Glutes'], tips: [
     'Lie on your back, feet flat, heels about a hand\'s length from your glutes.',
     'Push through your heels and lift your hips until body forms a straight line.',
     'Squeeze at the top for two seconds; don\'t arch your lower back.',
     'Brace by gently pressing your lower back into the floor before you lift.' ] },
-  { id: 'cable-kickback', name: 'Cable Kickback', group: 'Glutes', tips: [
+  { id: 'cable-kickback', name: 'Cable Kickback', groups: ['Glutes'], tips: [
     'Ankle strap on, hinge forward slightly and hold the machine.',
     'Kick back and slightly out, keeping the leg nearly straight.',
     'Stop before your lower back arches; squeeze the glute at the end.',
     'Keep your hips square, hip bones pointing forward.',
     'Control the return. Don\'t let the cable yank your leg forward.' ] },
-  { id: 'hip-abduction', name: 'Hip Abduction Machine', group: 'Glutes', tips: [
+  { id: 'hip-abduction', name: 'Hip Abduction Machine', groups: ['Glutes'], tips: [
     'Sit tall, or lean forward slightly to target the upper glutes more.',
     'Push the pads out with control and pause at the widest point.',
     'Don\'t let the weights slam on the way back.' ] },
-  { id: 'hip-adduction', name: 'Hip Adduction Machine', group: 'Legs', tips: [
+  { id: 'hip-adduction', name: 'Hip Adduction Machine', groups: ['Adductors'], tips: [
     'Start with a comfortable stretch — don\'t force the range at first.',
     'Squeeze the pads together and pause.',
     'Return slowly; keep your back against the seat.',
     'Set the pads on your inner thighs, just above the knees.',
     'Don\'t let the weight stack touch down between reps.',
     'Moderate weight for 12–20 reps works best.' ] },
-  { id: 'frog-pump', name: 'Frog Pump', group: 'Glutes', tips: [
+  { id: 'frog-pump', name: 'Frog Pump', groups: ['Glutes'], tips: [
     'Lie on your back, soles of the feet together, knees out wide.',
     'Thrust your hips up, squeezing your glutes hard at the top.',
     'High reps work well — 20 to 30 per set.',

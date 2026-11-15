@@ -56,6 +56,16 @@ function load() {
     const def = defaultState();
     ['exercises', 'workouts', 'templates', 'notes', 'bodyweight'].forEach(k => { if (!Array.isArray(s[k])) s[k] = def[k]; });
     if (!s.plan || typeof s.plan !== 'object') s.plan = {};
+    // Muscle groups: exercises now list several (e.g. Hamstrings + Glutes) and "Legs" is split up.
+    if (s.exercises.some(ex => !Array.isArray(ex.groups))) {
+      keepCopy(BEFORE_UPDATE_KEY, raw);
+      s.exercises.forEach(ex => {
+        if (Array.isArray(ex.groups)) return;
+        const def = !ex.custom && DEFAULT_EXERCISES.find(d => d.id === ex.id);
+        ex.groups = def ? [...def.groups] : [ex.group || 'Other'];
+        delete ex.group;
+      });
+    }
     // Add any new built-in exercises shipped after first launch.
     const have = new Set(s.exercises.map(e => e.id));
     DEFAULT_EXERCISES.forEach(e => { if (!have.has(e.id)) s.exercises.push({ ...e, tips: [...e.tips], note: '', custom: false }); });
@@ -96,6 +106,13 @@ function save() {
 }
 
 /* ---------- Helpers ---------- */
+// An exercise's muscle groups, main one first.
+const exGroups = ex => (Array.isArray(ex?.groups) && ex.groups.length) ? ex.groups : [ex?.group || 'Other'];
+// All groups in use: the standard order first, then any of your own.
+function allGroups() {
+  const used = new Set(state.exercises.flatMap(exGroups));
+  return [...MUSCLE_GROUPS.filter(g => used.has(g)), ...[...used].filter(g => !MUSCLE_GROUPS.includes(g)).sort()];
+}
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const exById = id => state.exercises.find(e => e.id === id);
@@ -188,7 +205,7 @@ const LOWER_BODY_GROUP = /leg|glute|quad|hamstring|calf|calves|hip|adduct|abduct
 const LOWER_BODY_IDS = ['deadlift', 'sumo-deadlift', 'rdl', 'single-leg-rdl', 'good-morning'];
 const isLowerBody = exerciseId => {
   const ex = exById(exerciseId);
-  return !!ex && (LOWER_BODY_IDS.includes(ex.id) || LOWER_BODY_GROUP.test(ex.group || ''));
+  return !!ex && (LOWER_BODY_IDS.includes(ex.id) || exGroups(ex).some(g => LOWER_BODY_GROUP.test(g)));
 };
 
 // Random phrase from a pool, never the same one twice in a row.
@@ -717,7 +734,7 @@ function editPlanDay(key) {
 let exFilter = 'All', exQuery = '';
 
 views.exercises = () => {
-  const groups = ['All', ...new Set(state.exercises.map(e => e.group))];
+  const groups = ['All', ...allGroups()];
   return `
     <input type="search" id="ex-search" placeholder="Search exercises" value="${esc(exQuery)}" />
     <div class="chips" style="margin-top:12px">
@@ -731,14 +748,14 @@ views.exercises = () => {
 function exerciseListHtml(act = 'show-ex') {
   const q = exQuery.trim().toLowerCase();
   const list = state.exercises
-    .filter(e => (exFilter === 'All' || e.group === exFilter) && (!q || e.name.toLowerCase().includes(q) || e.group.toLowerCase().includes(q)))
+    .filter(e => (exFilter === 'All' || exGroups(e).includes(exFilter)) && (!q || e.name.toLowerCase().includes(q) || exGroups(e).some(g => g.toLowerCase().includes(q))))
     .sort((a, b) => a.name.localeCompare(b.name));
   if (!list.length) return `<div class="empty">Nothing found.</div>`;
   return list.map(e => {
     const h = exerciseHistory(e.id);
     const best = Math.max(0, ...h.map(x => x.best1rm));
     return `<button class="list-item" data-act="${act}" data-id="${esc(e.id)}">
-      <div><div class="title">${esc(e.name)}</div><div class="sub">${esc(e.group)}${h.length ? ` · ${h.length} session${h.length > 1 ? 's' : ''}` : ''}</div></div>
+      <div><div class="title">${esc(e.name)}</div><div class="sub">${esc(exGroups(e).join(' · '))}${h.length ? ` · ${h.length} session${h.length > 1 ? 's' : ''}` : ''}</div></div>
       <span class="sub">${best ? `${fmt(best)} ${state.unit}` : ''} <span class="chev">›</span></span>
     </button>`;
   }).join('');
@@ -947,7 +964,7 @@ function showExercise(id) {
   const best = hist.reduce((b, h) => h.best1rm > b.best1rm ? h : b, { best1rm: 0 });
   openSheet(`
     <div class="row between">
-      <div><h2>${esc(ex.name)}</h2><div class="muted small">${esc(ex.group)}</div></div>
+      <div><h2>${esc(ex.name)}</h2><div class="muted small">${esc(exGroups(ex).join(' · '))}</div></div>
       <button class="link" data-act="edit-ex" data-id="${esc(id)}">Edit</button>
     </div>
 
@@ -977,14 +994,18 @@ function showExercise(id) {
 }
 
 function editExercise(id) {
-  const ex = id ? exById(id) : { name: '', group: '', tips: [], custom: true };
-  const groups = [...new Set(state.exercises.map(e => e.group))];
+  const ex = id ? exById(id) : { name: '', groups: [], tips: [], custom: true };
+  const chosen = id ? exGroups(ex) : [];
+  const groups = [...new Set([...MUSCLE_GROUPS, ...allGroups()])];
   openSheet(`
     <h2>${id ? 'Edit exercise' : 'New exercise'}</h2>
     <div class="stack" style="margin-top:16px">
       <input id="f-name" placeholder="Name" value="${esc(ex.name)}" />
-      <input id="f-group" placeholder="Muscle group (e.g. Legs)" value="${esc(ex.group)}" list="groups" />
-      <datalist id="groups">${groups.map(g => `<option value="${esc(g)}">`).join('')}</datalist>
+      <div class="label" style="margin-top:18px">Muscle groups · tap all that it trains</div>
+      <div class="chips wrap" id="f-groups">
+        ${groups.map(g => `<button class="chip ${chosen.includes(g) ? 'active' : ''}" data-act="toggle-group" data-g="${esc(g)}">${esc(g)}</button>`).join('')}
+      </div>
+      <input id="f-group-new" placeholder="Another group? Type it here" />
       <div class="label" style="margin-top:18px">Form tips · one per line</div>
       <textarea id="f-tips" rows="6" placeholder="Brace your core&#10;Keep elbows tucked">${esc(ex.tips.join('\n'))}</textarea>
     </div>
@@ -1171,10 +1192,17 @@ document.addEventListener('click', e => {
     case 'save-ex': {
       const name = $('#f-name').value.trim();
       if (!name) { toast('Give it a name'); break; }
-      const group = $('#f-group').value.trim() || 'Other';
+      const active = [...document.querySelectorAll('#f-groups .chip.active')].map(c => c.dataset.g);
+      // keep the existing order (main group first), then add newly ticked ones
+      const before = id ? exGroups(exById(id)) : [];
+      const picked = [...before.filter(g => active.includes(g)), ...active.filter(g => !before.includes(g))];
+      const typed = $('#f-group-new').value.split(',').map(g => g.trim()).filter(Boolean)
+        .map(g => g[0].toUpperCase() + g.slice(1));
+      const groups = [...new Set([...picked, ...typed])];
+      if (!groups.length) groups.push('Other');
       const tips = $('#f-tips').value.split('\n').map(s => s.trim()).filter(Boolean);
-      if (id) Object.assign(exById(id), { name, group, tips });
-      else state.exercises.push({ id: uid(), name, group, tips, note: '', custom: true });
+      if (id) { const ex = exById(id); Object.assign(ex, { name, groups, tips }); delete ex.group; }
+      else state.exercises.push({ id: uid(), name, groups, tips, note: '', custom: true });
       save(); closeSheet(); render(); toast('Saved');
       break;
     }
@@ -1183,6 +1211,7 @@ document.addEventListener('click', e => {
       if (confirm('Delete this exercise?')) { state.exercises = state.exercises.filter(x => x.id !== id); save(); closeSheet(); render(); }
       break;
     case 'ex-filter': exFilter = el.dataset.g; render(); break;
+    case 'toggle-group': el.classList.toggle('active'); break;
     case 'open-workout': openWorkout(id); break;
     case 'delete-workout':
       if (confirm('Delete this workout permanently?')) { state.workouts = state.workouts.filter(w => w.id !== id); save(); closeSheet(); render(); }
