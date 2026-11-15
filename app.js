@@ -603,19 +603,94 @@ views.notes = () => {
 };
 
 /* ---------- Bottom sheet ---------- */
+let sheetCloseTimer = null;
+
 function openSheet(html, after) {
   const sheet = $('#sheet');
-  sheet.innerHTML = html;
+  clearTimeout(sheetCloseTimer);
+  sheet.classList.remove('closing');
+  sheet.style.transform = ''; $('#backdrop').style.opacity = '';
+  sheet.innerHTML = `<button class="sheet-handle" data-act="close-sheet" aria-label="Close"></button>${html}`;
   sheet.hidden = false; $('#backdrop').hidden = false;
   document.body.style.overflow = 'hidden';
   sheet.scrollTop = 0;
   after?.(sheet);
 }
 function closeSheet() {
-  $('#sheet').hidden = true; $('#backdrop').hidden = true;
+  const sheet = $('#sheet');
+  if (sheet.hidden) return;
   document.body.style.overflow = '';
+  // Slide down, then hide.
+  sheet.classList.add('closing');
+  sheet.style.transform = 'translateY(100%)';
+  $('#backdrop').style.opacity = '0';
+  clearTimeout(sheetCloseTimer);
+  sheetCloseTimer = setTimeout(() => {
+    sheet.hidden = true; $('#backdrop').hidden = true;
+    sheet.classList.remove('closing');
+    sheet.style.transform = ''; $('#backdrop').style.opacity = '';
+  }, 220);
 }
 $('#backdrop').addEventListener('click', closeSheet);
+
+/* Drag the sheet down to close it.
+   Works from anywhere in the sheet when it is scrolled to the top, so normal
+   scrolling inside a long sheet still works. */
+(function sheetDrag() {
+  const sheet = $('#sheet'), backdrop = $('#backdrop');
+  let startY = 0, lastY = 0, lastT = 0, velocity = 0, dragging = false, armed = false;
+
+  const begin = (y, target) => {
+    // Don't hijack drags that start in text fields (text selection / their own scrolling).
+    armed = sheet.scrollTop <= 0 && !target.closest('input, textarea, select');
+    dragging = false; startY = lastY = y; lastT = performance.now(); velocity = 0;
+  };
+  const move = (y, e) => {
+    // A short sheet has nothing to scroll: stop the page behind it from scrolling (iOS).
+    if (sheet.scrollHeight <= sheet.clientHeight && e.cancelable && !e.target.closest('textarea')) e.preventDefault();
+    if (!armed) return;
+    const dy = y - startY;
+    if (!dragging) {
+      if (dy > 6 && sheet.scrollTop <= 0) { dragging = true; sheet.classList.add('dragging'); }
+      else if (dy < -6) { armed = false; return; } // scrolling up: let the sheet scroll
+      else return;
+    }
+    if (e.cancelable) e.preventDefault();
+    const now = performance.now();
+    velocity = (y - lastY) / Math.max(1, now - lastT); lastY = y; lastT = now;
+    const offset = Math.max(0, dy);
+    sheet.style.transform = `translateY(${offset}px)`;
+    backdrop.style.opacity = String(Math.max(0, 1 - offset / (sheet.offsetHeight || 1)));
+  };
+  const end = () => {
+    if (!dragging) { armed = false; return; }
+    dragging = armed = false;
+    sheet.classList.remove('dragging');
+    // Swallow the click that follows a drag on the handle.
+    sheet.dataset.dragged = '1'; setTimeout(() => delete sheet.dataset.dragged, 60);
+    const offset = lastY - startY;
+    if (offset > Math.min(120, sheet.offsetHeight * 0.25) || velocity > 0.5) closeSheet();
+    else { sheet.style.transform = ''; backdrop.style.opacity = ''; }
+  };
+
+  backdrop.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+  // Touch (phones)
+  sheet.addEventListener('touchstart', e => begin(e.touches[0].clientY, e.target), { passive: true });
+  sheet.addEventListener('touchmove', e => move(e.touches[0].clientY, e), { passive: false });
+  sheet.addEventListener('touchend', end);
+  sheet.addEventListener('touchcancel', end);
+
+  // Mouse (desktop): drag from the handle bar
+  sheet.addEventListener('mousedown', e => {
+    if (!e.target.closest('.sheet-handle')) return;
+    e.preventDefault(); begin(e.clientY, e.target);
+    const mm = ev => move(ev.clientY, ev);
+    const mu = () => { window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu); end(); };
+    window.addEventListener('mousemove', mm); window.addEventListener('mouseup', mu);
+  });
+})();
+
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 
 function showExercise(id) {
@@ -756,6 +831,7 @@ document.addEventListener('click', e => {
   const { act, id } = el.dataset;
   const a = state.active;
   switch (act) {
+    case 'close-sheet': if (!$('#sheet').dataset.dragged) closeSheet(); break;
     case 'start': startWorkout(); break;
     case 'repeat': {
       const src = id ? state.workouts.find(w => w.id === id)
