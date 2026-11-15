@@ -1483,10 +1483,11 @@ const THEMES = [
   { id: 'auto', name: 'Auto', bg: 'linear-gradient(135deg, #fafaf9 50%, #111111 50%)', accent: '#8a8a85' },
   { id: 'light', name: 'Light', bg: '#fafaf9', accent: '#1c1c1c' },
   { id: 'dark', name: 'Dark', bg: '#111111', accent: '#ececea' },
-  { id: 'pink', name: 'Pink', bg: '#fdf2f5', accent: '#b8476b' },
+  { id: 'pink', name: 'Pink', bg: '#ffedf4', accent: '#d1306b' },
   { id: 'green', name: 'Green', bg: '#f1f8f3', accent: '#2c7a52' },
   { id: 'blue', name: 'Blue', bg: '#f0f6fc', accent: '#2a68ae' },
   { id: 'sunset', name: 'Sunset', bg: '#fff4ec', accent: '#c94e33' },
+  { id: 'plum', name: 'Plum', bg: '#171021', accent: '#c9a6ff' },
 ];
 
 function applyTheme() {

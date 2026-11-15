@@ -29,9 +29,9 @@
 }
 
 :root[data-theme="pink"] {
-  --bg: #fdf2f5; --surface: #fffafb; --text: #4a2c37; --muted: #8f5f70;
-  --line: #f3d9e1; --accent: #b8476b; --accent-text: #ffffff; --soft: #f9e3ea;
-  --danger: #b03a3a; --chart: #b8476b;
+  --bg: #ffedf4; --surface: #fff7fb; --text: #4a1d33; --muted: #8c4e68;
+  --line: #fbd3e3; --accent: #d1306b; --accent-text: #ffffff; --soft: #ffd9e8;
+  --danger: #b03a3a; --chart: #d1306b;
   --motivate-fg: #3a3537; /* soft near-black on the motivational card */
 }
 :root[data-theme="pink"] .chart .area { opacity: .1; }
@@ -51,6 +51,16 @@
   --line: #f6d9c8; --accent: #c94e33; --accent-text: #ffffff; --soft: #fde3d4;
   --danger: #a83232; --chart: #c94e33; --motivate-fg: #8c3527;
 }
+/* Plum: a dark purple theme */
+:root[data-theme="plum"] {
+  --bg: #171021; --surface: #221830; --text: #f1e8fc; --muted: #b3a0cc;
+  --line: #3a2b50; --accent: #c9a6ff; --accent-text: #1d1230; --soft: #2d2140;
+  --danger: #ff8f88; --chart: #c9a6ff;
+  --motivate-bg: #f4eefc; --motivate-fg: #4b2d8a; --motivate-line: #ffffff;
+  color-scheme: dark;
+}
+:root[data-theme="plum"] .chart .area { opacity: .16; }
+:root[data-theme="plum"] .sheet-backdrop { background: rgba(5, 0, 15, .6); }
 :root[data-theme="green"] .chart .area, :root[data-theme="blue"] .chart .area, :root[data-theme="sunset"] .chart .area { opacity: .1; }
 :root[data-theme="sunset"] .btn:not(.ghost):not(.danger) { background: linear-gradient(135deg, #d9603c, #c2416a); }
 
