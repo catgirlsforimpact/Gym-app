@@ -115,13 +115,19 @@ function toast(msg, ms = 1800, cls = '') {
 
 /* ---------- Motivation ---------- */
 const lastPhrase = {};
+const LOWER_BODY_GROUPS = ['Legs', 'Glutes'];
+const isLowerBody = exerciseId => LOWER_BODY_GROUPS.includes(exById(exerciseId)?.group);
+
 // Random phrase from a pool, never the same one twice in a row.
-function phrase(kind, vars = {}) {
-  const pool = PHRASES[kind] || [];
+// For lower-body work, half the time it picks from the matching "...Legs" pool instead.
+function phrase(kind, vars = {}, lowerBody = false) {
+  const legsKey = kind + 'Legs';
+  const key = lowerBody && PHRASES[legsKey]?.length && Math.random() < 0.5 ? legsKey : kind;
+  const pool = PHRASES[key] || [];
   if (!pool.length) return '';
   let i = Math.floor(Math.random() * pool.length);
-  if (pool.length > 1 && i === lastPhrase[kind]) i = (i + 1) % pool.length;
-  lastPhrase[kind] = i;
+  if (pool.length > 1 && i === lastPhrase[key]) i = (i + 1) % pool.length;
+  lastPhrase[key] = i;
   return pool[i].replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
 }
 
@@ -139,7 +145,7 @@ function checkExerciseMilestone(i) {
   const status = kind && `${kind}:${total}`;
   if (!kind || celebrated[key] === status) return;
   celebrated[key] = status;
-  toast(phrase(kind, { exercise: exById(en.exerciseId)?.name || 'that' }), 3500, 'motivate');
+  toast(phrase(kind, { exercise: exById(en.exerciseId)?.name || 'that' }, isLowerBody(en.exerciseId)), 3500, 'motivate');
 }
 
 /* ---------- Charts (tiny SVG, no deps) ---------- */
@@ -334,7 +340,7 @@ function showWorkoutComplete(w, prs) {
   openSheet(`
     <div class="celebrate">
       <div class="label" style="margin-top:4px">Workout complete</div>
-      ${state.motivation ? `<p class="celebrate-phrase">${esc(phrase('workoutDone'))}</p>` : `<p class="celebrate-phrase">Nice work.</p>`}
+      ${state.motivation ? `<p class="celebrate-phrase">${esc(phrase('workoutDone', {}, w.entries.some(en => isLowerBody(en.exerciseId))))}</p>` : `<p class="celebrate-phrase">Nice work.</p>`}
       <div class="stats" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat"><div class="v">${fmtDuration(w.duration)}</div><div class="k">Time</div></div>
         <div class="stat"><div class="v">${sets}</div><div class="k">Sets</div></div>
