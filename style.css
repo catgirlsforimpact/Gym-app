@@ -277,3 +277,9 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .suggest-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 4px; }
 .suggest-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-left: 4px; white-space: nowrap; background: var(--surface); color: var(--muted); }
 .suggest-tag.weight { background: var(--accent); color: var(--accent-text); }
+
+/* Notes from earlier sessions of the same template */
+.prev-notes { border-left: 3px solid var(--accent); padding-left: 12px; }
+.prev-note + .prev-note { margin-top: 10px; }
+.prev-note .meta { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.prev-note .body { white-space: pre-wrap; font-size: 15px; }

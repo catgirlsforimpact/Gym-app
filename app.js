@@ -358,6 +358,14 @@ views.train = () => {
     </div>
     ${a.entries.length ? `<button class="link" style="margin-top:12px" data-act="save-template">Save as template</button>` : ''}
 
+    ${(prev => prev.length ? `
+      <div class="label">Earlier notes · ${esc(templateById(a.templateId)?.name || a.title || 'this workout')}</div>
+      <div class="prev-notes">${prev.map(w => `
+        <div class="prev-note">
+          <div class="meta">${esc(relDay(w.date))}${relDay(w.date) === fmtDate(w.date) ? '' : ` · ${esc(fmtDate(w.date))}`}</div>
+          <div class="body">${esc(w.note)}</div>
+        </div>`).join('')}
+      </div>` : '')(previousNotes(a))}
     <div class="label">Workout notes</div>
     <textarea data-field="note" placeholder="How did it feel? Energy, sleep, anything to remember…">${esc(a.note)}</textarea>
 
@@ -405,6 +413,17 @@ function suggestNext(exerciseId) {
 function suggestText(sg) {
   if (sg.kind === 'time') return `${sg.r} seconds`;
   return sg.w > 0 ? `${fmt(sg.w)} ${state.unit} × ${sg.r}` : `${sg.r} reps`;
+}
+
+// Earlier workouts of the same template that have notes, newest first.
+// Older workouts didn't record their template, so they match by name.
+function previousNotes(a, limit = 3) {
+  if (!a?.templateId) return [];
+  const t = templateById(a.templateId);
+  return state.workouts
+    .filter(w => w.id !== a.id && w.note?.trim() && (w.templateId === a.templateId || (!w.templateId && t && w.title === t.name)))
+    .sort((x, y) => new Date(y.date) - new Date(x.date))
+    .slice(0, limit);
 }
 
 function entryBlock(en, i) {
@@ -595,7 +614,7 @@ function startFromTemplate(t) {
       sets: Array.from({ length: Math.max(1, en.sets) }, (_, i) => ({ w: prev[i]?.w ?? prev[prev.length - 1]?.w ?? '', r: '' })),
     };
   }));
-  state.active.title = t.name; save(); render();
+  state.active.title = t.name; state.active.templateId = t.id; save(); render();
 }
 
 function templateFromWorkout(w) {
@@ -1241,7 +1260,7 @@ document.addEventListener('click', e => {
       if (state.active && !confirm('You already have a workout in progress. Replace it?')) break;
       closeSheet(); tab = 'train'; go('train');
       startWorkout(src.entries.map(en => ({ exerciseId: en.exerciseId, sets: en.sets.map(s => ({ w: s.w, r: '' })) })));
-      state.active.title = src.title; save(); render();
+      state.active.title = src.title; if (src.templateId) state.active.templateId = src.templateId; save(); render();
       break;
     }
     case 'add-exercise': pickExercise(); break;
