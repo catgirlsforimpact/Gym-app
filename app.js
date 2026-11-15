@@ -333,6 +333,16 @@ views.train = () => {
       <button class="btn block" data-act="start">Start workout</button>
       <div class="count-line">${c.month}${goalValue('month') ? ` of ${goalValue('month')}` : ''} workout${(goalValue('month') || c.month) === 1 ? '' : 's'} this month · ${c.year}${goalValue('year') ? ` of ${goalValue('year')}` : ''} this year</div>
       ${state.workouts.length ? `<button class="btn ghost block" style="margin-top:10px" data-act="repeat">Repeat last workout</button>` : ''}
+      ${draftUnsaved() ? (d => `<div class="card draft-card">
+        <div style="min-width:0">
+          <div class="title">Unfinished template</div>
+          <div class="sub">${esc(d.name?.trim() || 'Untitled')} · ${d.entries.length} exercise${d.entries.length === 1 ? '' : 's'}</div>
+        </div>
+        <div class="row" style="gap:12px;flex-shrink:0">
+          <button class="link" data-act="draft-discard">Discard</button>
+          <button class="btn sm" data-act="draft-continue">Continue</button>
+        </div>
+      </div>`)(state.templateDraft) : ''}
       <div class="row between"><div class="label">Templates</div><button class="link" style="margin-top:18px" data-act="new-template">+ New</button></div>
       ${state.templates.length ? `<div class="list">${state.templates.map(t => `
         <div class="list-item">
@@ -617,7 +627,18 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* ---------- Templates ---------- */
-let templateDraft = null; // template being edited in the sheet
+// The template being edited. It's saved with your data as you go, so closing the
+// editor by accident (a tap outside, a swipe) never loses it.
+let templateDraft = state.templateDraft || null;
+function setDraft(d) { templateDraft = d; state.templateDraft = d; save(); }
+// True when there is an unfinished template worth keeping.
+function draftUnsaved() {
+  const d = state.templateDraft;
+  if (!d) return false;
+  const saved = state.templates.find(t => t.id === d.id);
+  if (saved) return JSON.stringify([saved.name, saved.entries]) !== JSON.stringify([d.name, d.entries]);
+  return !!(d.name?.trim() || d.entries?.length);
+}
 
 // Last weights used for an exercise, so a new workout is pre-filled.
 function lastSetsFor(id) {
@@ -641,7 +662,7 @@ function templateFromWorkout(w) {
 }
 
 function editTemplate(draft, { keepScroll = false, moved = -1 } = {}) {
-  templateDraft = draft;
+  setDraft(draft);
   const isNew = !state.templates.some(t => t.id === draft.id);
   const scroll = keepScroll ? $('#sheet').scrollTop : 0;
   const n = draft.entries.length;
@@ -671,8 +692,9 @@ function editTemplate(draft, { keepScroll = false, moved = -1 } = {}) {
     <button class="btn block" style="margin-top:10px" data-act="t-save">Save template</button>
     ${!isNew ? `<button class="btn danger block" style="margin-top:6px" data-act="t-delete">Delete template</button>` : ''}
   `, sheet => {
+    sheetKind = 'template';
     sheet.scrollTop = scroll;
-    $('#t-name', sheet).addEventListener('input', e => { templateDraft.name = e.target.value; });
+    $('#t-name', sheet).addEventListener('input', e => { templateDraft.name = e.target.value; state.templateDraft = templateDraft; save(); });
   });
 }
 
@@ -1061,6 +1083,7 @@ views.notes = () => {
 
 /* ---------- Bottom sheet ---------- */
 let sheetCloseTimer = null;
+let sheetKind = null; // what the open sheet is, e.g. 'template'
 
 function openSheet(html, after) {
   const sheet = $('#sheet');
@@ -1071,12 +1094,18 @@ function openSheet(html, after) {
   sheet.hidden = false; $('#backdrop').hidden = false;
   document.body.style.overflow = 'hidden';
   sheet.scrollTop = 0;
+  sheetKind = null;
   after?.(sheet);
 }
 function closeSheet() {
   const sheet = $('#sheet');
   if (sheet.hidden) return;
   document.body.style.overflow = '';
+  if (sheetKind === 'template' && draftUnsaved()) {
+    toast('Template kept. Tap Continue to finish it.', 2600);
+    if (tab === 'train') setTimeout(render, 230);
+  }
+  sheetKind = null;
   // Slide down, then hide.
   sheet.classList.add('closing');
   sheet.style.transform = 'translateY(100%)';
@@ -1099,7 +1128,12 @@ $('#backdrop').addEventListener('click', closeSheet);
 
   const begin = (y, target) => {
     // Don't hijack drags that start in text fields (text selection / their own scrolling).
-    armed = sheet.scrollTop <= 0 && !target.closest('input, textarea, select');
+    // On a long, scrollable sheet only the top strip (grab bar and title) closes it,
+    // so scrolling a list can't close it by accident. Short sheets drag from anywhere.
+    const top = sheet.getBoundingClientRect().top;
+    const scrollable = sheet.scrollHeight > sheet.clientHeight + 4;
+    const inTopStrip = y - top < 76 || !!target.closest('.sheet-handle');
+    armed = sheet.scrollTop <= 0 && !target.closest('input, textarea, select') && (!scrollable || inTopStrip);
     dragging = false; startY = lastY = y; lastT = performance.now(); velocity = 0;
   };
   const move = (y, e) => {
@@ -1217,6 +1251,7 @@ function pickExercise(act = 'pick-ex') {
     ${act === 'pick-ex' ? `<button class="btn ghost block" style="margin-top:14px" data-act="new-ex">+ Create new exercise</button>`
       : `<button class="btn ghost block" style="margin-top:14px" data-act="t-back">Back</button>`}
   `, sheet => {
+    if (act === 't-pick') sheetKind = 'template';
     const s = $('#pick-search', sheet);
     s.addEventListener('input', () => { exQuery = s.value; $('#pick-list').innerHTML = exerciseListHtml(act); });
   });
@@ -1464,10 +1499,18 @@ document.addEventListener('click', e => {
     case 'rest-adj': adjustRest(+el.dataset.v); break;
     case 'rest-len': state.restSeconds = +el.dataset.v; save(); openSettings(); if (tab === 'train') render(); break;
     // Templates
-    case 'new-template': editTemplate({ id: uid(), name: '', entries: [] }); break;
+    case 'new-template': {
+      const d = state.templateDraft;
+      if (draftUnsaved() && !state.templates.some(t => t.id === d.id)) { editTemplate(d); toast('Picking up where you left off'); }
+      else editTemplate({ id: uid(), name: '', entries: [] });
+      break;
+    }
+    case 'draft-continue': if (state.templateDraft) editTemplate(state.templateDraft); break;
+    case 'draft-discard': setDraft(null); render(); toast('Draft discarded'); break;
     case 'edit-template': {
       const t = state.templates.find(x => x.id === id);
-      if (t) editTemplate(JSON.parse(JSON.stringify(t)));
+      if (state.templateDraft?.id === id && draftUnsaved()) { editTemplate(state.templateDraft); toast('Your unsaved changes are back'); }
+      else if (t) editTemplate(JSON.parse(JSON.stringify(t)));
       break;
     }
     case 'start-template': {
@@ -1505,13 +1548,13 @@ document.addEventListener('click', e => {
       if (!t.entries.length) { toast('Add at least one exercise'); break; }
       const i = state.templates.findIndex(x => x.id === t.id);
       if (i >= 0) state.templates[i] = t; else state.templates.push(t);
-      templateDraft = null; save(); closeSheet(); render(); toast('Template saved');
+      setDraft(null); closeSheet(); render(); toast('Template saved');
       break;
     }
     case 't-delete':
       if (confirm('Delete this template?')) {
         state.templates = state.templates.filter(x => x.id !== templateDraft.id);
-        templateDraft = null; save(); closeSheet(); render();
+        setDraft(null); closeSheet(); render();
       }
       break;
     // Body weight

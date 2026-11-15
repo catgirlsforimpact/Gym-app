@@ -338,3 +338,8 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .entry.moved { animation: entry-moved .7s ease-out; }
 @keyframes entry-moved { from { box-shadow: 0 0 0 3px var(--accent); } to { box-shadow: 0 0 0 3px transparent; } }
 @media (prefers-reduced-motion: reduce) { .entry.moved { animation: none; } }
+
+/* Unfinished template */
+.draft-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; border-color: var(--accent); }
+.draft-card .title { font-weight: 600; }
+.draft-card .sub { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
