@@ -103,7 +103,6 @@ const PHRASES = {
     'One set left. Your jeans will fit better because of this one.',
     'Last set. Long, strong cat legs. Earn them.',
     'Last set. This is what makes a dress fall just right.',
-    'One set left. Lifted glutes are built under load, not on the couch.',
     'Last set. Stronger hips, better curves. Push.',
     'One more set. Legs that look great in heels start here.',
     'Last set. Your shorts this summer will thank you.',
