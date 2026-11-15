@@ -9,9 +9,9 @@
   --soft: #f1f1ee;
   --danger: #b4443a;
   --chart: var(--text);
-  --motivate-bg: #ece3fd;
-  --motivate-fg: #3b2b66;
-  --motivate-line: #d6c6fb;
+  --motivate-bg: #ffffff;
+  --motivate-fg: #1f1a24;
+  --motivate-line: #ebe7ef;
   --radius: 14px;
   --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
@@ -19,13 +19,13 @@
   :root:not([data-theme="light"]) {
     --bg: #111111; --surface: #1a1a1a; --text: #ececea; --muted: #7d7d78;
     --line: #2a2a2a; --accent: #ececea; --accent-text: #111111; --soft: #222222; --danger: #e07a6f;
-    --motivate-bg: #3a2d5e; --motivate-fg: #f1eaff; --motivate-line: #54448a;
+    --motivate-bg: #f6f4f8; --motivate-fg: #1f1a24; --motivate-line: #ffffff;
   }
 }
 :root[data-theme="dark"] {
   --bg: #111111; --surface: #1a1a1a; --text: #ececea; --muted: #7d7d78;
   --line: #2a2a2a; --accent: #ececea; --accent-text: #111111; --soft: #222222; --danger: #e07a6f;
-  --motivate-bg: #3a2d5e; --motivate-fg: #f1eaff; --motivate-line: #54448a;
+  --motivate-bg: #f6f4f8; --motivate-fg: #1f1a24; --motivate-line: #ffffff;
 }
 
 :root[data-theme="pink"] {
@@ -241,7 +241,7 @@ input[type="checkbox"] { accent-color: var(--accent); }
 
 /* Motivational messages */
 .toast { max-width: calc(100% - 32px); width: max-content; text-align: center; }
-/* Motivational message: a lilac card that pops in at the middle of the screen */
+/* Motivational message: a white card that pops in at the middle of the screen */
 .toast.motivate, body.resting .toast.motivate {
   top: 50%; bottom: auto; left: 50%;
   transform: translate(-50%, -50%);
@@ -250,7 +250,7 @@ input[type="checkbox"] { accent-color: var(--accent); }
   background: var(--motivate-bg); color: var(--motivate-fg);
   border: 1px solid var(--motivate-line);
   font-size: 18px; font-weight: 600; line-height: 1.35; letter-spacing: -0.01em;
-  box-shadow: 0 18px 50px rgba(59, 43, 102, .22), 0 2px 8px rgba(59, 43, 102, .12);
+  box-shadow: 0 20px 60px rgba(20, 15, 30, .22), 0 3px 10px rgba(20, 15, 30, .10);
   animation: motivate-pop .32s cubic-bezier(.2, .9, .3, 1.25);
 }
 @keyframes motivate-pop {
@@ -304,3 +304,18 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .prev-note + .prev-note { margin-top: 10px; }
 .prev-note .meta { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
 .prev-note .body { white-space: pre-wrap; font-size: 15px; }
+
+/* Workout goals */
+.goals { margin-bottom: 10px; }
+.goals-empty { margin-bottom: 10px; }
+.goal + .goal { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.goal-name { font-weight: 600; }
+.goal-count { font-variant-numeric: tabular-nums; color: var(--muted); }
+.goal-count b { color: var(--text); font-size: 18px; }
+.goal-bar { height: 10px; border-radius: 99px; background: var(--soft); overflow: hidden; margin-top: 8px; }
+.goal-bar span { display: block; height: 100%; border-radius: 99px; background: var(--accent); transition: width .4s ease; }
+.goal-foot { margin-top: 6px; flex-direction: column; align-items: flex-start; gap: 2px; }
+.goal-ok { color: var(--text); font-weight: 500; }
+.goal-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.goal-input span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+.goal-input input { font-size: 20px; text-align: center; font-variant-numeric: tabular-nums; }

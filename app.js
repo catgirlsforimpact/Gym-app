@@ -25,6 +25,7 @@ function defaultState() {
     restEnd: null,  // timestamp (ms) when current rest ends
     motivation: true, // show motivational phrases
     repRange: [8, 13], // app-wide rep range for progression suggestions
+    goals: { month: null, year: null }, // workout goals (counts)
   };
 }
 
@@ -324,7 +325,7 @@ views.train = () => {
     return `
       ${todayPlanCard()}
       <button class="btn block" data-act="start">Start workout</button>
-      <div class="count-line">${c.month} workout${c.month === 1 ? '' : 's'} this month · ${c.year} this year</div>
+      <div class="count-line">${c.month}${goalValue('month') ? ` of ${goalValue('month')}` : ''} workout${(goalValue('month') || c.month) === 1 ? '' : 's'} this month · ${c.year}${goalValue('year') ? ` of ${goalValue('year')}` : ''} this year</div>
       ${state.workouts.length ? `<button class="btn ghost block" style="margin-top:10px" data-act="repeat">Repeat last workout</button>` : ''}
       <div class="row between"><div class="label">Templates</div><button class="link" style="margin-top:18px" data-act="new-template">+ New</button></div>
       ${state.templates.length ? `<div class="list">${state.templates.map(t => `
@@ -694,6 +695,78 @@ function showBodyweightHistory() {
     </div>`);
 }
 
+/* ---------- Workout goals ---------- */
+function goalValue(k) { const n = parseInt(state.goals?.[k], 10); return n > 0 ? n : null; }
+
+function goalRow(label, done, goal, left, unit) {
+  const pct = Math.min(100, Math.round(done / goal * 100));
+  const reached = done >= goal;
+  const remaining = goal - done;
+  // workouts per week still needed to get there
+  const weeks = Math.max(left.days / 7, 1);
+  const perWeek = Math.round(remaining / weeks * 10) / 10;
+  const pace = reached ? 'Goal reached' : `About ${perWeek} a week gets you there`;
+  return `<div class="goal">
+    <div class="row between goal-top">
+      <span class="goal-name">${label}</span>
+      <span class="goal-count"><b>${done}</b> / ${goal}</span>
+    </div>
+    <div class="goal-bar ${reached ? 'reached' : ''}" role="progressbar" aria-valuemin="0" aria-valuemax="${goal}" aria-valuenow="${done}"><span style="width:${pct}%"></span></div>
+    <div class="row between small muted goal-foot">
+      <span>${reached ? (done > goal ? `${done - goal} over your goal` : 'You hit it') : `${remaining} to go · ${left.n} ${unit}${left.n === 1 ? '' : 's'} left`}</span>
+      <span class="${reached ? 'goal-ok' : ''}">${pace}</span>
+    </div>
+  </div>`;
+}
+
+function goalsSection() {
+  const now = new Date();
+  const c = workoutCounts(now);
+  const gm = goalValue('month'), gy = goalValue('year');
+  if (!gm && !gy) {
+    return `<div class="card goals-empty">
+      <div style="font-weight:600">Set a workout goal</div>
+      <div class="small muted" style="margin:4px 0 12px">Pick how many workouts you want this month and this year, and track how close you are.</div>
+      <button class="btn sm" data-act="edit-goals">Set goals</button>
+    </div>`;
+  }
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeftM = daysInMonth - now.getDate() + 1;
+  const startY = new Date(now.getFullYear(), 0, 1), endY = new Date(now.getFullYear() + 1, 0, 1);
+  const daysInYear = Math.round((endY - startY) / 864e5);
+  const dayOfYear = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - startY) / 864e5) + 1;
+  const weeksLeftY = Math.max(1, Math.ceil((daysInYear - dayOfYear + 1) / 7));
+  return `<div class="card goals">
+    <div class="row between" style="margin-bottom:4px">
+      <span class="small muted">Goals</span>
+      <button class="link" data-act="edit-goals">Edit</button>
+    </div>
+    ${gm ? goalRow(now.toLocaleDateString(undefined, { month: 'long' }), c.month, gm, { n: daysLeftM, days: daysLeftM }, 'day') : ''}
+    ${gy ? goalRow(String(now.getFullYear()), c.year, gy, { n: weeksLeftY, days: daysInYear - dayOfYear + 1 }, 'week') : ''}
+  </div>`;
+}
+
+function editGoals() {
+  openSheet(`
+    <h2>Workout goals</h2>
+    <p class="small muted" style="margin:6px 0 0">How many workouts do you want to do? Leave a box empty for no goal.</p>
+    <div class="goal-inputs">
+      <label class="goal-input"><span>Per month</span><input id="goal-month" inputmode="numeric" placeholder="e.g. 12" value="${goalValue('month') ?? ''}" /></label>
+      <label class="goal-input"><span>Per year</span><input id="goal-year" inputmode="numeric" placeholder="e.g. 150" value="${goalValue('year') ?? ''}" /></label>
+    </div>
+    <div class="small muted" id="goal-hint" style="margin-top:8px"></div>
+    <button class="btn block" style="margin-top:18px" data-act="save-goals">Save</button>
+  `, sheet => {
+    const m = $('#goal-month', sheet), y = $('#goal-year', sheet), hint = $('#goal-hint', sheet);
+    const update = () => {
+      const mv = parseInt(m.value, 10), yv = parseInt(y.value, 10);
+      hint.textContent = mv > 0 ? `${mv} a month is about ${Math.round(mv * 12 / 52 * 10) / 10} a week${!(yv > 0) ? `, or ${mv * 12} a year` : ''}.` : yv > 0 ? `${yv} a year is about ${Math.round(yv / 52 * 10) / 10} a week.` : '';
+    };
+    m.addEventListener('input', update); y.addEventListener('input', update); update();
+    [m, y].forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') $('[data-act="save-goals"]', sheet).click(); }));
+  });
+}
+
 /* ---------- Week planner ---------- */
 let planWeekOffset = 0;   // 0 = this week, 1 = next week, ...
 let planDraft = null;     // day being edited: { key, text, templateId }
@@ -849,7 +922,7 @@ let progressEx = null;
 
 views.progress = () => {
   const ws = state.workouts;
-  if (!ws.length) return `<div class="empty">Your workout stats will show up here after your first workout.</div>${bodyweightSection()}`;
+  if (!ws.length) return `${goalsSection()}<div class="empty">Your workout stats will show up here after your first workout.</div>${bodyweightSection()}`;
 
   const now = new Date();
   const thisWeek = weekStart(now);
@@ -882,6 +955,7 @@ views.progress = () => {
   const sorted = [...ws].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return `
+    ${goalsSection()}
     ${(c => `<div class="stats">
       <div class="stat"><div class="v">${c.week}</div><div class="k">This week</div></div>
       <div class="stat"><div class="v">${c.month}</div><div class="k">This month</div></div>
@@ -1207,6 +1281,15 @@ document.addEventListener('click', e => {
   switch (act) {
     case 'close-sheet': if (!$('#sheet').dataset.dragged) closeSheet(); break;
     case 'start': startWorkout(); break;
+    case 'edit-goals': editGoals(); break;
+    case 'save-goals': {
+      const read = sel => { const v = $(sel).value.trim(); if (!v) return null; const n = parseInt(v, 10); return n > 0 && n < 10000 ? n : NaN; };
+      const month = read('#goal-month'), year = read('#goal-year');
+      if (Number.isNaN(month) || Number.isNaN(year)) { toast('Use whole numbers, like 12'); break; }
+      state.goals = { month, year }; save(); closeSheet(); render();
+      toast(month || year ? 'Goals saved' : 'Goals cleared');
+      break;
+    }
     // Week planner
     case 'plan-week': planWeekOffset = Math.max(-8, Math.min(12, planWeekOffset + +el.dataset.v)); render(); break;
     case 'plan-week-set': planWeekOffset = +el.dataset.v; render(); break;
