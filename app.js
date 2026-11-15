@@ -718,7 +718,7 @@ function openSettings() {
       Start automatically after logging a set
     </label>
     <div class="label">Appearance</div>
-    <div class="seg">${['auto', 'light', 'dark'].map(t => `<button class="${state.theme === t ? 'active' : ''}" data-act="theme" data-v="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div>
+    <div class="seg">${['auto', 'light', 'dark', 'pink'].map(t => `<button class="${state.theme === t ? 'active' : ''}" data-act="theme" data-v="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div>
     <div class="label">Your data</div>
     <p class="small muted" style="margin-top:0">Everything is stored on this device. Export a backup now and then.</p>
     <div class="row">
@@ -742,6 +742,12 @@ function openSettings() {
 function applyTheme() {
   if (state.theme === 'auto') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.dataset.theme = state.theme;
+  // Match the phone's status bar to the theme background.
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
+    m.dataset.orig ??= m.getAttribute('content');
+    m.setAttribute('content', state.theme === 'auto' ? m.dataset.orig : bg);
+  });
 }
 
 /* ---------- Global event handling ---------- */

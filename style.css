@@ -8,6 +8,7 @@
   --accent-text: #fafaf9;
   --soft: #f1f1ee;
   --danger: #b4443a;
+  --chart: var(--text);
   --radius: 14px;
   --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
@@ -21,6 +22,13 @@
   --bg: #111111; --surface: #1a1a1a; --text: #ececea; --muted: #7d7d78;
   --line: #2a2a2a; --accent: #ececea; --accent-text: #111111; --soft: #222222; --danger: #e07a6f;
 }
+
+:root[data-theme="pink"] {
+  --bg: #fdf2f5; --surface: #fffafb; --text: #4a2c37; --muted: #8f5f70;
+  --line: #f3d9e1; --accent: #b8476b; --accent-text: #ffffff; --soft: #f9e3ea;
+  --danger: #b03a3a; --chart: #b8476b;
+}
+:root[data-theme="pink"] .chart .area { opacity: .1; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -142,10 +150,10 @@ main { max-width: 640px; margin: 0 auto; padding: 4px 20px 24px; }
 .chart { width: 100%; height: auto; display: block; }
 .chart .axis { stroke: var(--line); }
 .chart .lbl { fill: var(--muted); font-size: 10px; }
-.chart .ln { stroke: var(--text); fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.chart .area { fill: var(--text); opacity: .06; }
-.chart .pt { fill: var(--bg); stroke: var(--text); stroke-width: 2; }
-.chart .bar { fill: var(--text); opacity: .85; }
+.chart .ln { stroke: var(--chart); fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .area { fill: var(--chart); opacity: .06; }
+.chart .pt { fill: var(--bg); stroke: var(--chart); stroke-width: 2; }
+.chart .bar { fill: var(--chart); opacity: .85; }
 .chart .bar.zero { opacity: .12; }
 
 /* Notes */
@@ -211,3 +219,4 @@ body.resting { padding-bottom: calc(132px + env(safe-area-inset-bottom)); }
 
 .bw-now { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
 body.resting .toast { bottom: calc(140px + env(safe-area-inset-bottom)); }
+input[type="checkbox"] { accent-color: var(--accent); }

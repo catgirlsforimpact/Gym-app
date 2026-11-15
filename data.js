@@ -96,4 +96,70 @@ const DEFAULT_EXERCISES = [
     'Start from a still dead hang.',
     'Curl the pelvis up, not just the legs.',
     'Lower slowly to avoid swinging.' ] },
+  // --- More lower body ---
+  { id: 'goblet-squat', name: 'Goblet Squat', group: 'Legs', tips: [
+    'Hold the dumbbell vertically against your chest, elbows pointing down.',
+    'Sit between your heels and let your elbows brush the inside of your knees.',
+    'Keep your chest tall and drive up through the whole foot.' ] },
+  { id: 'bulgarian-split-squat', name: 'Bulgarian Split Squat', group: 'Legs', tips: [
+    'Rear foot laces-down on a bench, front foot far enough forward that you can drop straight down.',
+    'Lean the torso slightly forward for more glutes, stay upright for more quads.',
+    'Lower until the back knee nearly touches the floor; push through the front heel.',
+    'Do all reps on one leg, then switch.' ] },
+  { id: 'reverse-lunge', name: 'Reverse Lunge', group: 'Legs', tips: [
+    'Step back, not out to the side, and keep your hips square.',
+    'Most of your weight stays on the front leg.',
+    'Easier on the knees than forward lunges — good for control and balance.' ] },
+  { id: 'step-up', name: 'Step-up', group: 'Legs', tips: [
+    'Box height so your thigh is about parallel when your foot is on it.',
+    'Drive through the heel of the top foot — don\'t push off the back leg.',
+    'Stand fully tall at the top, then lower slowly.' ] },
+  { id: 'hack-squat', name: 'Hack Squat', group: 'Legs', tips: [
+    'Back and hips flat against the pad the whole time.',
+    'Feet lower on the platform for more quads, higher for more glutes.',
+    'Go as deep as you can while keeping your heels down.' ] },
+  { id: 'leg-extension', name: 'Leg Extension', group: 'Legs', tips: [
+    'Line your knee up with the machine\'s pivot point.',
+    'Pad sits just above your ankles.',
+    'Squeeze your quads hard at the top for a second, lower under control.' ] },
+  { id: 'leg-curl', name: 'Leg Curl', group: 'Legs', tips: [
+    'Knee lined up with the machine\'s pivot; hips pressed into the pad.',
+    'Curl all the way, squeeze, then lower slowly — the lowering builds the most.',
+    'Don\'t let your hips lift to cheat the weight up.' ] },
+  { id: 'nordic-curl', name: 'Nordic Curl', group: 'Legs', tips: [
+    'Anchor your ankles under something solid, kneel on a pad.',
+    'Keep a straight line from knees to head — don\'t bend at the hips.',
+    'Lower as slowly as you can, catch yourself with your hands, push back up.' ] },
+  { id: 'sumo-deadlift', name: 'Sumo Deadlift', group: 'Legs', tips: [
+    'Wide stance, toes turned out, hands inside your legs.',
+    'Push your knees out over your toes and keep your chest up.',
+    'Think "spread the floor" as you drive up; lock out with your glutes.' ] },
+  { id: 'single-leg-rdl', name: 'Single-leg RDL', group: 'Legs', tips: [
+    'Soft knee on the standing leg, hips stay level — don\'t let one open up.',
+    'Reach the free leg back as the torso tips forward, like a seesaw.',
+    'Go slow; balance is part of the exercise.' ] },
+  { id: 'good-morning', name: 'Good Morning', group: 'Legs', tips: [
+    'Bar on your upper back like a squat, knees slightly bent.',
+    'Push your hips back with a flat back until you feel the hamstrings.',
+    'Start light — this is about the stretch, not heavy weight.' ] },
+  { id: 'glute-bridge', name: 'Glute Bridge', group: 'Glutes', tips: [
+    'Lie on your back, feet flat, heels about a hand\'s length from your glutes.',
+    'Push through your heels and lift your hips until body forms a straight line.',
+    'Squeeze at the top for two seconds; don\'t arch your lower back.' ] },
+  { id: 'cable-kickback', name: 'Cable Kickback', group: 'Glutes', tips: [
+    'Ankle strap on, hinge forward slightly and hold the machine.',
+    'Kick back and slightly out, keeping the leg nearly straight.',
+    'Stop before your lower back arches; squeeze the glute at the end.' ] },
+  { id: 'hip-abduction', name: 'Hip Abduction Machine', group: 'Glutes', tips: [
+    'Sit tall, or lean forward slightly to target the upper glutes more.',
+    'Push the pads out with control and pause at the widest point.',
+    'Don\'t let the weights slam on the way back.' ] },
+  { id: 'hip-adduction', name: 'Hip Adduction Machine', group: 'Legs', tips: [
+    'Start with a comfortable stretch — don\'t force the range at first.',
+    'Squeeze the pads together and pause.',
+    'Return slowly; keep your back against the seat.' ] },
+  { id: 'frog-pump', name: 'Frog Pump', group: 'Glutes', tips: [
+    'Lie on your back, soles of the feet together, knees out wide.',
+    'Thrust your hips up, squeezing your glutes hard at the top.',
+    'High reps work well — 20 to 30 per set.' ] },
 ];

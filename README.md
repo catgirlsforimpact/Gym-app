@@ -6,11 +6,11 @@ A minimal workout tracker. Log exercises, read form tips, track your progress an
 - **Train**: start a workout, add exercises, log weight × reps per set. It shows what you did last time, and a timer runs while you train. You can also repeat a past workout.
 - **Rest timer**: starts on its own when you log a set's reps, or tap **Rest**. Adjust ±15s or skip. It beeps and vibrates when time is up and keeps running if you reload. Choose 1:00, 1:30, 2:00 or 3:00 in Settings, or turn off auto-start.
 - **Templates**: save a routine like "Push day" (exercises plus number of sets) and start it with one tap. Weights are pre-filled from your last session. Create one from scratch, from a workout in progress, or from any past workout.
-- **Exercises**: 23 built-in exercises with form tips, grouped by muscle. Add your own exercises, edit the tips, and keep personal notes on each one (cues, machine settings, grip).
+- **Exercises**: 39 built-in exercises (plenty of lower body) with form tips, grouped by muscle. Add your own exercises, edit the tips, and keep personal notes on each one (cues, machine settings, grip).
 - **Progress**: total workouts, workouts this week, week streak, volume over the last 30 days, a weekly frequency chart, an estimated 1-rep-max trend per exercise, best sets and full history.
 - **Body weight**: log your weight in the Progress tab and see the trend and your 30-day change. One entry per day; logging again the same day replaces it.
 - **Notes**: a journal for free-form notes. It also collects your workout notes and exercise notes in one place.
-- Light and dark mode, kg or lb, JSON backup export and import.
+- Light, dark and pink themes, kg or lb, JSON backup export and import.
 - PRs are detected when you finish a workout.
 
 ## Run it
