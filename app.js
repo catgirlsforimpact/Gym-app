@@ -631,20 +631,30 @@ function templateFromWorkout(w) {
   return { id: uid(), name: w.title || 'My routine', entries: w.entries.map(en => ({ exerciseId: en.exerciseId, sets: Math.max(1, en.sets.length) })) };
 }
 
-function editTemplate(draft) {
+function editTemplate(draft, { keepScroll = false, moved = -1 } = {}) {
   templateDraft = draft;
   const isNew = !state.templates.some(t => t.id === draft.id);
+  const scroll = keepScroll ? $('#sheet').scrollTop : 0;
+  const n = draft.entries.length;
   openSheet(`
     <h2>${isNew ? 'New template' : 'Edit template'}</h2>
     <input id="t-name" placeholder="Name, e.g. Push day" value="${esc(draft.name)}" style="margin-top:16px" />
     <div class="label">Exercises</div>
     ${draft.entries.length ? `<div class="list">${draft.entries.map((en, i) => `
-      <div class="list-item">
-        <span class="title" style="flex:1">${esc(exById(en.exerciseId)?.name || 'Unknown')}</span>
-        <div class="stepper">
-          <button data-act="t-sets" data-i="${i}" data-v="-1" aria-label="Fewer sets">−</button>
-          <span>${en.sets} set${en.sets > 1 ? 's' : ''}</span>
-          <button data-act="t-sets" data-i="${i}" data-v="1" aria-label="More sets">+</button>
+      <div class="list-item t-row ${i === moved ? 'moved' : ''}">
+        ${n > 1 ? `<div class="t-order">
+          <button data-act="t-move" data-i="${i}" data-v="-1" aria-label="Move ${esc(exById(en.exerciseId)?.name || 'exercise')} up" ${i === 0 ? 'disabled' : ''}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+          <button data-act="t-move" data-i="${i}" data-v="1" aria-label="Move ${esc(exById(en.exerciseId)?.name || 'exercise')} down" ${i === n - 1 ? 'disabled' : ''}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        </div>` : ''}
+        <div class="t-main">
+          <span class="title">${esc(exById(en.exerciseId)?.name || 'Unknown')}</span>
+          <div class="stepper">
+            <button data-act="t-sets" data-i="${i}" data-v="-1" aria-label="Fewer sets">−</button>
+            <span>${en.sets} set${en.sets > 1 ? 's' : ''}</span>
+            <button data-act="t-sets" data-i="${i}" data-v="1" aria-label="More sets">+</button>
+          </div>
         </div>
         <button class="x" data-act="t-remove" data-i="${i}" aria-label="Remove">×</button>
       </div>`).join('')}</div>` : `<div class="muted small">No exercises yet.</div>`}
@@ -652,6 +662,7 @@ function editTemplate(draft) {
     <button class="btn block" style="margin-top:10px" data-act="t-save">Save template</button>
     ${!isNew ? `<button class="btn danger block" style="margin-top:6px" data-act="t-delete">Delete template</button>` : ''}
   `, sheet => {
+    sheet.scrollTop = scroll;
     $('#t-name', sheet).addEventListener('input', e => { templateDraft.name = e.target.value; });
   });
 }
@@ -1454,10 +1465,17 @@ document.addEventListener('click', e => {
     }
     case 't-sets': {
       const en = templateDraft.entries[+el.dataset.i];
-      en.sets = Math.min(20, Math.max(1, en.sets + +el.dataset.v)); editTemplate(templateDraft);
+      en.sets = Math.min(20, Math.max(1, en.sets + +el.dataset.v)); editTemplate(templateDraft, { keepScroll: true });
       break;
     }
-    case 't-remove': templateDraft.entries.splice(+el.dataset.i, 1); editTemplate(templateDraft); break;
+    case 't-remove': templateDraft.entries.splice(+el.dataset.i, 1); editTemplate(templateDraft, { keepScroll: true }); break;
+    case 't-move': {
+      const i = +el.dataset.i, j = i + +el.dataset.v, list = templateDraft.entries;
+      if (j < 0 || j >= list.length) break;
+      [list[i], list[j]] = [list[j], list[i]];
+      editTemplate(templateDraft, { keepScroll: true, moved: j });
+      break;
+    }
     case 't-add': pickExercise('t-pick'); break;
     case 't-pick': templateDraft.entries.push({ exerciseId: id, sets: 3 }); editTemplate(templateDraft); break;
     case 't-back': editTemplate(templateDraft); break;

@@ -319,3 +319,13 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .goal-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
 .goal-input span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
 .goal-input input { font-size: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* Template editor: reorder */
+.t-row { gap: 10px; }
+.t-order { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.t-order button { width: 32px; height: 28px; border-radius: 8px; background: var(--soft); color: var(--text); display: grid; place-items: center; }
+.t-order button:disabled { opacity: .3; cursor: default; }
+.t-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.t-row.moved { animation: t-moved .6s ease-out; }
+@keyframes t-moved { from { background: var(--soft); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .t-row.moved { animation: none; } }
