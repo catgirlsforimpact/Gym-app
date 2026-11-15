@@ -1442,7 +1442,8 @@ function openSettings() {
       Show motivational messages
     </label>
     <div class="label">Appearance</div>
-    <div class="seg">${['auto', 'light', 'dark', 'pink'].map(t => `<button class="${state.theme === t ? 'active' : ''}" data-act="theme" data-v="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div>
+    <div class="theme-grid">${THEMES.map(t => `<button class="theme-opt ${state.theme === t.id ? 'active' : ''}" data-act="theme" data-v="${t.id}" aria-pressed="${state.theme === t.id}">
+      <span class="swatch" style="background:${t.bg};--sw-accent:${t.accent}"></span>${t.name}</button>`).join('')}</div>
     ${(rc => rc && (rc.workouts > state.workouts.length || rc.templates > state.templates.length || rc.notes > state.notes.length) ? `
       <div class="card recover-card">
         <div style="font-weight:600">A saved copy of your data was found</div>
@@ -1476,6 +1477,17 @@ function openSettings() {
     });
   });
 }
+
+// Themes in the picker: background and accent colors for the swatches.
+const THEMES = [
+  { id: 'auto', name: 'Auto', bg: 'linear-gradient(135deg, #fafaf9 50%, #111111 50%)', accent: '#8a8a85' },
+  { id: 'light', name: 'Light', bg: '#fafaf9', accent: '#1c1c1c' },
+  { id: 'dark', name: 'Dark', bg: '#111111', accent: '#ececea' },
+  { id: 'pink', name: 'Pink', bg: '#fdf2f5', accent: '#b8476b' },
+  { id: 'green', name: 'Green', bg: '#f1f8f3', accent: '#2c7a52' },
+  { id: 'blue', name: 'Blue', bg: '#f0f6fc', accent: '#2a68ae' },
+  { id: 'sunset', name: 'Sunset', bg: '#fff4ec', accent: '#c94e33' },
+];
 
 function applyTheme() {
   if (state.theme === 'auto') document.documentElement.removeAttribute('data-theme');
@@ -1634,7 +1646,10 @@ document.addEventListener('click', e => {
       break;
     }
     case 'del-note': if (confirm('Delete note?')) { state.notes = state.notes.filter(n => n.id !== id); save(); render(); } break;
-    case 'theme': state.theme = el.dataset.v; save(); applyTheme(); openSettings(); break;
+    case 'theme':
+      state.theme = el.dataset.v; save(); applyTheme();
+      document.querySelectorAll('.theme-opt').forEach(b => { const on = b.dataset.v === state.theme; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on); });
+      break;
     // Rest timer
     case 'rest-start': startRest(); break;
     case 'rest-stop': stopRest(); break;

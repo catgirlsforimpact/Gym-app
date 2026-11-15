@@ -35,6 +35,32 @@
   --motivate-fg: #3a3537; /* soft near-black on the motivational card */
 }
 :root[data-theme="pink"] .chart .area { opacity: .1; }
+:root[data-theme="green"] {
+  --bg: #f1f8f3; --surface: #fbfefc; --text: #1d3a2a; --muted: #4f735d;
+  --line: #d4e9db; --accent: #2c7a52; --accent-text: #ffffff; --soft: #e1f0e6;
+  --danger: #b03a3a; --chart: #2c7a52; --motivate-fg: #1f5a3d;
+}
+:root[data-theme="blue"] {
+  --bg: #f0f6fc; --surface: #fbfdff; --text: #1a2e45; --muted: #4d6b8a;
+  --line: #d2e2f2; --accent: #2a68ae; --accent-text: #ffffff; --soft: #e0ebf7;
+  --danger: #b03a3a; --chart: #2a68ae; --motivate-fg: #1f4d82;
+}
+/* Sunset: warm peach and apricot, coral accent, deep plum text */
+:root[data-theme="sunset"] {
+  --bg: #fff4ec; --surface: #fffaf6; --text: #45283a; --muted: #875a55;
+  --line: #f6d9c8; --accent: #c94e33; --accent-text: #ffffff; --soft: #fde3d4;
+  --danger: #a83232; --chart: #c94e33; --motivate-fg: #8c3527;
+}
+:root[data-theme="green"] .chart .area, :root[data-theme="blue"] .chart .area, :root[data-theme="sunset"] .chart .area { opacity: .1; }
+:root[data-theme="sunset"] .btn:not(.ghost):not(.danger) { background: linear-gradient(135deg, #d9603c, #c2416a); }
+
+/* Theme picker */
+.theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.theme-opt { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--muted); }
+.theme-opt.active { border-color: var(--accent); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--accent); }
+.swatch { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(0,0,0,.08); position: relative; overflow: hidden; }
+.swatch::after { content: ""; position: absolute; right: 0; bottom: 0; width: 50%; height: 50%; background: var(--sw-accent); border-top-left-radius: 100%; }
+
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
