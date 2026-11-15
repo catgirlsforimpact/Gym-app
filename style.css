@@ -10,7 +10,7 @@
   --danger: #b4443a;
   --chart: var(--text);
   --motivate-bg: #ffffff;
-  --motivate-fg: #5b3fa8;
+  --motivate-fg: #b8476b;
   --motivate-line: #ebe7ef;
   --radius: 14px;
   --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
@@ -19,13 +19,13 @@
   :root:not([data-theme="light"]) {
     --bg: #111111; --surface: #1a1a1a; --text: #ececea; --muted: #7d7d78;
     --line: #2a2a2a; --accent: #ececea; --accent-text: #111111; --soft: #222222; --danger: #e07a6f;
-    --motivate-bg: #f6f4f8; --motivate-fg: #5b3fa8; --motivate-line: #ffffff;
+    --motivate-bg: #f6f4f8; --motivate-fg: #b8476b; --motivate-line: #ffffff;
   }
 }
 :root[data-theme="dark"] {
   --bg: #111111; --surface: #1a1a1a; --text: #ececea; --muted: #7d7d78;
   --line: #2a2a2a; --accent: #ececea; --accent-text: #111111; --soft: #222222; --danger: #e07a6f;
-  --motivate-bg: #f6f4f8; --motivate-fg: #5b3fa8; --motivate-line: #ffffff;
+  --motivate-bg: #f6f4f8; --motivate-fg: #b8476b; --motivate-line: #ffffff;
 }
 
 :root[data-theme="pink"] {
