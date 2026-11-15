@@ -324,6 +324,14 @@ ex('pullup', 'Pull-up', ['Back', 'Biceps'], [
     "Lower all the way to straight arms under control.",
     "Keep your body still. If you need to swing, use a band or the assisted pull-up machine.",
 ])
+ex('chinup', 'Chin-up', ['Back', 'Biceps'], [
+    "Grip the bar about shoulder-width apart, palms facing you.",
+    "Start from a full hang, then pull your shoulders down away from your ears.",
+    "Pull your elbows down to your sides and bring your chest toward the bar.",
+    "Get your chin over the bar, squeeze, then lower to straight arms under control.",
+    "Keep your legs still and your ribs down; no kicking or swinging.",
+    "Not there yet? Use a band or the assisted machine, or jump to the top and lower yourself slowly.",
+])
 ex('assisted-pullup', 'Assisted Pull-up', ['Back', 'Biceps'], [
     "Set the assistance on the machine or loop a band over the bar. More assistance makes it easier.",
     "Grip a little wider than your shoulders and start from straight arms.",
@@ -340,6 +348,14 @@ ex('lat-pulldown', 'Lat Pulldown', ['Back', 'Biceps'], [
     "Let the bar rise slowly until your arms are straight and you feel a stretch in your lats.",
     "Don't lean far back or swing; that turns it into a row.",
 ])
+ex('straight-arm-pulldown', 'Straight-arm Pulldown', ['Back'], [
+    "Stand facing a high cable with a straight bar or rope, arms straight out in front of you.",
+    "Hinge slightly at the hips with soft knees and a flat back.",
+    "Keeping your arms almost straight, sweep the bar down in an arc to your thighs.",
+    "Squeeze your lats at the bottom. Think about pulling with your armpits, not your hands.",
+    "Let it rise slowly until you feel a stretch under your arms.",
+    "Your elbows stay nearly locked. If they bend a lot, it turns into a triceps exercise.",
+])
 ex('row', 'Barbell Row', ['Back', 'Biceps'], [
     "Hold the bar with hands just outside your knees, then hinge until your torso is at about 45° or lower, knees soft.",
     "Keep your back flat and your core braced.",
@@ -354,6 +370,30 @@ ex('db-row', 'One-arm Dumbbell Row', ['Back', 'Biceps'], [
     "Pull the dumbbell toward your hip, keeping your elbow close to your body.",
     "Squeeze your back at the top without twisting your torso.",
     "Lower to a full stretch at the bottom.",
+])
+ex('chest-supported-row', 'Chest-supported Row', ['Back', 'Biceps'], [
+    "Set an incline bench to about 30–45° and lie chest-down with dumbbells hanging below your shoulders. A row machine with a chest pad works the same way.",
+    "Keep your chest on the pad for the whole set.",
+    "Pull the weights toward your lower ribs, leading with your elbows.",
+    "Squeeze your shoulder blades together at the top and pause.",
+    "Lower to straight arms and let your shoulder blades stretch forward.",
+    "The pad takes your lower back out of it, so you can focus on your back muscles.",
+])
+ex('t-bar-row', 'T-bar Row', ['Back', 'Biceps'], [
+    "Stand over the bar with your feet about shoulder-width and grip the handle close to the plates.",
+    "Hinge forward with soft knees until your torso is at about 45°, back flat.",
+    "Pull the handle toward your stomach, keeping your elbows close.",
+    "Squeeze your back at the top without standing up.",
+    "Lower under control to straight arms.",
+    "Keep your chest up and the same torso angle every rep.",
+])
+ex('inverted-row', 'Inverted Row', ['Back', 'Biceps'], [
+    "Set a bar in a rack or Smith machine at about hip height and hang underneath it, hands a little wider than your shoulders.",
+    "Keep your body straight from head to heels and squeeze your glutes.",
+    "Pull your chest up to the bar, leading with your elbows.",
+    "Squeeze your shoulder blades together at the top.",
+    "Lower slowly to straight arms.",
+    "Bend your knees to make it easier, or raise your feet to make it harder.",
 ])
 ex('cable-row', 'Seated Cable Row', ['Back', 'Biceps'], [
     "Sit tall with your knees slightly bent and feet on the platform.",
@@ -389,6 +429,14 @@ ex('incline-db', 'Incline Dumbbell Press', ['Chest', 'Shoulders'], [
     "Lower until the dumbbells are beside your upper chest and you feel a stretch, forearms vertical.",
     "Press up and slightly in without clanging the dumbbells together.",
 ])
+ex('incline-bench', 'Incline Bench Press', ['Chest', 'Shoulders', 'Triceps'], [
+    "Set the bench to about 30° and lie with your eyes under the bar.",
+    "Grip slightly wider than your shoulders and pull your shoulder blades back and down.",
+    "Lower the bar to your upper chest, just below your collarbones.",
+    "Keep your elbows slightly tucked, about 45–60° from your body.",
+    "Press straight up over your shoulders without bouncing off your chest.",
+    "Keep your feet planted, and use a spotter or safety bars when it's heavy.",
+])
 ex('machine-chest-press', 'Machine Chest Press', ['Chest', 'Shoulders', 'Triceps'], [
     "Adjust the seat so the handles line up with the middle of your chest.",
     "Sit with your back against the pad and your shoulder blades pulled back.",
@@ -411,6 +459,21 @@ ex('pushup', 'Push-up', ['Chest', 'Shoulders', 'Triceps'], [
     "Don't let your hips sag or pike up.",
     "Too hard? Put your hands on a bench or box. The higher your hands, the easier it gets.",
 ])
+ex('cable-fly', 'Cable Fly', ['Chest'], [
+    "Set both pulleys at about shoulder height and take a handle in each hand.",
+    "Step forward into a split stance, chest up, with a slight bend in your elbows.",
+    "Bring your hands together in front of your chest in a wide arc, as if hugging a tree.",
+    "Squeeze your chest for a moment with your hands meeting at chest height.",
+    "Open back up slowly until you feel a stretch, keeping the same elbow bend.",
+    "Set the pulleys low and bring your hands up and together to target your upper chest.",
+], step=1)
+ex('pec-deck', 'Pec Deck', ['Chest'], [
+    "Adjust the seat so the handles are at chest height.",
+    "Sit with your back against the pad and your shoulder blades pulled back.",
+    "Bring the handles together in front of your chest with a slight bend in your elbows.",
+    "Squeeze for a moment, then open slowly until you feel a stretch.",
+    "Keep your shoulders down and your chest up; don't let your shoulders roll forward.",
+], step=1)
 ex('dip', 'Dip', ['Chest', 'Triceps'], [
     "Support yourself on straight arms with your shoulders pulled down, away from your ears.",
     "Lean slightly forward for more chest; stay upright for more triceps.",
@@ -418,6 +481,14 @@ ex('dip', 'Dip', ['Chest', 'Triceps'], [
     "Press back up to straight arms without swinging.",
     "Use the assisted dip machine or a band until you can do clean reps.",
     "If the front of your shoulder hurts, don't go as deep.",
+])
+ex('close-grip-bench', 'Close-grip Bench Press', ['Triceps', 'Chest'], [
+    "Lie on the bench and grip the bar about shoulder-width apart.",
+    "Pull your shoulder blades back and down.",
+    "Lower the bar to your lower chest, keeping your elbows close to your body.",
+    "Press up by straightening your arms, focusing on your triceps.",
+    "Keep your wrists straight and stacked over your elbows.",
+    "A very narrow grip strains the wrists without helping; shoulder-width is enough.",
 ])
 
 # ---------------- Shoulders ----------------
@@ -436,6 +507,29 @@ ex('db-shoulder-press', 'Dumbbell Shoulder Press', ['Shoulders', 'Triceps'], [
     "Press up until your arms are straight and the dumbbells are over your shoulders.",
     "Lower until the dumbbells are at about chin to shoulder level.",
     "Don't arch your lower back to push more weight.",
+])
+ex('arnold-press', 'Arnold Press', ['Shoulders', 'Triceps'], [
+    "Sit on an upright bench with the dumbbells at shoulder height, palms facing you.",
+    "As you press up, rotate your palms to face forward.",
+    "Finish with your arms straight and the dumbbells over your shoulders.",
+    "Reverse the rotation on the way down, ending with your palms facing you again.",
+    "Move smoothly and keep your back against the pad.",
+    "Use a little less weight than in a regular dumbbell press.",
+])
+ex('machine-shoulder-press', 'Machine Shoulder Press', ['Shoulders', 'Triceps'], [
+    "Adjust the seat so the handles start at about shoulder height.",
+    "Sit with your back flat against the pad and your core braced.",
+    "Press up until your arms are straight, without locking out hard.",
+    "Lower slowly back to shoulder height.",
+    "Keep your lower back on the pad; don't arch to push more weight.",
+])
+ex('landmine-press', 'Landmine Press', ['Shoulders', 'Chest', 'Triceps'], [
+    "Put one end of a barbell in a landmine holder, or wedge it into a corner, and hold the other end at your shoulder.",
+    "Stand in a split stance, or kneel, with your core braced.",
+    "Press the bar up and forward until your arm is straight.",
+    "Let your shoulder blade move forward a little at the top.",
+    "Lower under control back to your shoulder.",
+    "Often easier on the shoulders than pressing straight overhead.",
 ])
 ex('lateral-raise', 'Lateral Raise', ['Shoulders'], [
     "Stand tall, leaning slightly forward, with a soft bend in your elbows.",
@@ -468,12 +562,48 @@ ex('curl', 'Biceps Curl', ['Biceps'], [
     "Squeeze at the top, then lower slowly to straight arms.",
     "No swinging or leaning back. If you need momentum, the weight is too heavy.",
 ])
+ex('reverse-pec-deck', 'Reverse Pec Deck', ['Shoulders', 'Back'], [
+    "Sit facing the pec deck pad and set the handles to the back position.",
+    "Grip the handles with your arms straight out in front at shoulder height.",
+    "Open your arms out to the sides in a wide arc, leading with your elbows.",
+    "Squeeze the backs of your shoulders, then return slowly.",
+    "Keep your chest against the pad and don't shrug.",
+], step=1)
+ex('cable-lateral-raise', 'Cable Lateral Raise', ['Shoulders'], [
+    "Set a pulley at its lowest point and stand side-on, holding the handle in your far hand.",
+    "Lean slightly away from the machine, holding on with your other hand.",
+    "Raise your arm out to the side, leading with your elbow, to about shoulder height.",
+    "Keep your shoulder down; don't shrug.",
+    "Lower slowly. The cable keeps tension on your shoulder through the whole range.",
+    "Do all reps on one side, then switch.",
+], step=1)
 ex('hammer-curl', 'Hammer Curl', ['Biceps'], [
     "Hold the dumbbells by your sides with palms facing each other.",
     "Keep your elbows by your sides.",
     "Curl up with your palms still facing in, like holding a hammer.",
     "Squeeze at the top, then lower slowly.",
     "No swinging; keep your shoulders still.",
+])
+ex('incline-db-curl', 'Incline Dumbbell Curl', ['Biceps'], [
+    "Sit on a bench set to about 45–60° with your back against the pad.",
+    "Let your arms hang straight down, palms facing forward.",
+    "Curl the dumbbells up without moving your elbows forward.",
+    "Squeeze at the top, then lower slowly to a full stretch.",
+    "The incline puts your biceps on a big stretch, so go lighter than in a standing curl.",
+])
+ex('preacher-curl', 'Preacher Curl', ['Biceps'], [
+    "Adjust the seat so your armpits rest snugly on top of the pad.",
+    "Grip the bar or dumbbell with your palms up and your upper arms flat on the pad.",
+    "Curl up until your forearms are almost vertical.",
+    "Lower slowly until your arms are almost straight. Don't let the weight drop through the last part.",
+    "Keep your upper arms on the pad; don't lift your shoulders or elbows.",
+])
+ex('cable-curl', 'Cable Curl', ['Biceps'], [
+    "Attach a straight bar or rope to a low pulley and stand facing it.",
+    "Keep your elbows by your sides, palms up (or facing each other with a rope).",
+    "Curl up by bending only your elbows.",
+    "Squeeze at the top, then lower slowly to straight arms.",
+    "Stand tall; don't lean back to finish the rep.",
 ])
 ex('triceps-pushdown', 'Triceps Pushdown', ['Triceps'], [
     "Stand close to the cable, leaning slightly forward, elbows tucked by your sides.",
@@ -488,6 +618,29 @@ ex('overhead-triceps-extension', 'Overhead Triceps Extension', ['Triceps'], [
     "Lower the weight behind your head until you feel a stretch in your triceps.",
     "Straighten your arms fully at the top.",
     "Only your forearms move. Brace your core so your back doesn't arch.",
+])
+ex('skull-crusher', 'Skull Crusher', ['Triceps'], [
+    "Lie on a bench holding an EZ bar or dumbbells over your chest with straight arms.",
+    "Tilt your arms slightly back toward your head.",
+    "Bend only at the elbows, lowering the weight toward your forehead or just behind your head.",
+    "Keep your elbows pointing up and about shoulder-width apart.",
+    "Straighten your arms back to the start.",
+    "Lower under control. A lighter weight with a deep stretch works best.",
+])
+ex('bench-dip', 'Bench Dip', ['Triceps', 'Chest'], [
+    "Sit on the edge of a bench with your hands beside your hips, fingers pointing forward.",
+    "Slide your hips off the bench with your knees bent and feet flat.",
+    "Lower by bending your elbows until they reach about 90°.",
+    "Keep your back close to the bench and your shoulders down.",
+    "Press back up to straight arms.",
+    "Straighten your legs to make it harder. If your shoulders feel pinched, don't go as deep.",
+])
+ex('triceps-kickback', 'Triceps Kickback', ['Triceps'], [
+    "Hinge forward with a flat back, with one hand on a bench if you like.",
+    "Hold the dumbbell with your upper arm close to your side and parallel to the floor.",
+    "Straighten your arm back until it's fully extended.",
+    "Squeeze your triceps for a moment at the top.",
+    "Lower slowly. Only your forearm moves; your upper arm stays still.",
 ])
 
 # ---------------- Core ----------------
