@@ -1,0 +1,31 @@
+# Lift Log
+
+A minimal workout tracker. Log exercises, read form tips, track your progress and keep notes.
+
+## Features
+- **Train**: start a workout, add exercises, log weight × reps per set. It shows what you did last time, and a timer runs while you train. You can also repeat a past workout.
+- **Exercises**: 23 built-in exercises with form tips, grouped by muscle. Add your own exercises, edit the tips, and keep personal notes on each one (cues, machine settings, grip).
+- **Progress**: total workouts, workouts this week, week streak, volume over the last 30 days, a weekly frequency chart, an estimated 1-rep-max trend per exercise, best sets and full history.
+- **Notes**: a journal for free-form notes. It also collects your workout notes and exercise notes in one place.
+- Light and dark mode, kg or lb, JSON backup export and import.
+- PRs are detected when you finish a workout.
+
+## Run it
+No build step and no dependencies. Serve the folder with any static server:
+
+```sh
+python3 -m http.server 8000
+# open http://localhost:8000
+```
+
+To use it on your phone, host it (for example with GitHub Pages: Settings → Pages → deploy from this branch). Then open it in your phone browser and choose "Add to Home Screen". It works offline after the first visit.
+
+## Data
+Everything is stored in your browser's `localStorage` on the device. Use **Settings → Export backup** now and then, because clearing your browser data will erase it.
+
+## Files
+- `index.html`: app shell
+- `style.css`: styles (light and dark themes)
+- `app.js`: all app logic, views and charts (plain JS, SVG charts)
+- `data.js`: built-in exercise library and form tips
+- `sw.js`, `manifest.json`, `icon.svg`: installable / offline support
