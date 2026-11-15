@@ -8,6 +8,7 @@ function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toS
 function defaultState() {
   return {
     unit: 'kg',
+    tipsVersion: TIPS_VERSION,
     theme: 'auto',
     exercises: DEFAULT_EXERCISES.map(e => ({ ...e, tips: [...e.tips], note: '', custom: false })),
     workouts: [],   // { id, date, title, note, duration, entries: [{ exerciseId, sets: [{ w, r }] }] }
@@ -26,10 +27,20 @@ function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
-    const s = { ...defaultState(), ...JSON.parse(raw) };
+    const saved = JSON.parse(raw);
+    const s = { ...defaultState(), ...saved };
+    s.unit = 'kg'; // the app uses kilograms only
     // Add any new built-in exercises shipped after first launch.
     const have = new Set(s.exercises.map(e => e.id));
     DEFAULT_EXERCISES.forEach(e => { if (!have.has(e.id)) s.exercises.push({ ...e, tips: [...e.tips], note: '', custom: false }); });
+    // Built-in tips were updated: add any new ones to saved exercises, keeping your own edits.
+    if ((saved.tipsVersion || 1) < TIPS_VERSION) {
+      s.exercises.forEach(ex => {
+        const def = !ex.custom && DEFAULT_EXERCISES.find(d => d.id === ex.id);
+        if (def) def.tips.forEach(t => { if (!ex.tips.includes(t)) ex.tips.push(t); });
+      });
+      s.tipsVersion = TIPS_VERSION;
+    }
     return s;
   } catch (err) {
     console.error(err);
@@ -845,8 +856,6 @@ function openWorkout(id) {
 function openSettings() {
   openSheet(`
     <h2>Settings</h2>
-    <div class="label">Units</div>
-    <div class="seg">${['kg', 'lb'].map(u => `<button class="${state.unit === u ? 'active' : ''}" data-act="unit" data-v="${u}">${u}</button>`).join('')}</div>
     <div class="label">Rest timer</div>
     <div class="seg">${[60, 90, 120, 180].map(s => `<button class="${state.restSeconds === s ? 'active' : ''}" data-act="rest-len" data-v="${s}">${fmtClock(s)}</button>`).join('')}</div>
     <label class="row small" style="margin-top:12px;cursor:pointer">
@@ -875,7 +884,7 @@ function openSettings() {
         const data = JSON.parse(await file.text());
         if (!Array.isArray(data.workouts) || !Array.isArray(data.exercises)) throw new Error('bad file');
         if (!confirm('Replace all current data with this backup?')) return;
-        state = { ...defaultState(), ...data }; save(); applyTheme(); closeSheet(); render(); toast('Backup restored');
+        state = { ...defaultState(), ...data, unit: 'kg' }; save(); applyTheme(); closeSheet(); render(); toast('Backup restored');
       } catch { toast('That file doesn’t look like a backup'); }
     });
   });
@@ -955,7 +964,6 @@ document.addEventListener('click', e => {
       break;
     }
     case 'del-note': if (confirm('Delete note?')) { state.notes = state.notes.filter(n => n.id !== id); save(); render(); } break;
-    case 'unit': state.unit = el.dataset.v; save(); openSettings(); render(); break;
     case 'theme': state.theme = el.dataset.v; save(); applyTheme(); openSettings(); break;
     // Rest timer
     case 'rest-start': startRest(); break;
