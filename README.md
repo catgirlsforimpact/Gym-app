@@ -38,4 +38,4 @@ Everything is stored in your browser's `localStorage` on the device. Use **Setti
 - `legacy-tips.js`: earlier built-in tips, used once to keep your own tips when the built-in ones were rewritten
 - `phrases.js`: motivational phrases
 - `sw.js`, `manifest.json`: installable / offline support
-- `icon.svg`, `icon-*.png`: app icon (light pink dumbbell on white)
+- `icon.svg`, `icon-*.png`: app icon (white dumbbell on a pastel pink-to-blue gradient)
