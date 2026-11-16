@@ -30,6 +30,8 @@ To use it on your phone, host it (for example with GitHub Pages: Settings → Pa
 ## Data
 Everything is stored in your browser's `localStorage` on the device. Use **Settings → Export backup** now and then, because clearing your browser data will erase it.
 
+A backup contains everything: workouts, templates, goals, body weight, notes, the week plan, your exercises with their notes and tips, and your settings. **Import** shows what a backup contains before restoring it, keeps your current data as a safety copy, and updates backups from older versions automatically.
+
 ## Files
 - `index.html`: app shell
 - `style.css`: styles (light and dark themes)

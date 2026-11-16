@@ -216,6 +216,93 @@ function toast(msg, ms = 1800, cls = '') {
   setTimeout(() => el.remove(), ms);
 }
 
+/* ---------- Confirm screen ----------
+   The app's own "Are you sure?" dialog. Browser pop-up dialogs are blocked in
+   some places, such as inside claude.ai, where they silently answer "no". */
+function askConfirm({ title, body = '', confirmLabel = 'OK', danger = false, html = '' }) {
+  return new Promise(resolve => {
+    document.getElementById('confirm-layer')?.remove();
+    const layer = document.createElement('div');
+    layer.id = 'confirm-layer'; layer.className = 'confirm-layer';
+    layer.innerHTML = `<div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="confirm-title" id="confirm-title">${esc(title)}</div>
+        ${body ? `<div class="confirm-body">${esc(body)}</div>` : ''}${html}
+        <div class="confirm-actions">
+          <button class="btn ghost" data-confirm="no">Cancel</button>
+          <button class="btn ${danger ? 'confirm-danger' : ''}" data-confirm="yes">${esc(confirmLabel)}</button>
+        </div>
+      </div>`;
+    const done = ok => { layer.remove(); document.removeEventListener('keydown', onKey, true); resolve(ok); };
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+    layer.addEventListener('click', e => {
+      e.stopPropagation();
+      const b = e.target.closest('[data-confirm]');
+      if (b) done(b.dataset.confirm === 'yes'); else if (e.target === layer) done(false);
+    });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(layer);
+    layer.querySelector('[data-confirm="yes"]').focus();
+  });
+}
+
+/* ---------- Backups ---------- */
+// What a backup holds, in plain words, so you can check before restoring.
+function summarizeBackup(d) {
+  const n = (x, one, many) => `${x} ${x === 1 ? one : many}`;
+  const goals = d.goals || {};
+  const lines = [
+    n(d.workouts?.length || 0, 'workout', 'workouts'),
+    n(d.templates?.length || 0, 'template', 'templates'),
+    goals.month || goals.year ? `Goals: ${[goals.month && `${goals.month} a month`, goals.year && `${goals.year} a year`].filter(Boolean).join(', ')}` : 'No goals set',
+    n(d.bodyweight?.length || 0, 'body weight entry', 'body weight entries'),
+    n(d.notes?.length || 0, 'note', 'notes'),
+    n(Object.keys(d.plan || {}).length, 'planned day', 'planned days'),
+    n((d.exercises || []).filter(e => e.custom).length, 'custom exercise', 'custom exercises'),
+    n((d.exercises || []).filter(e => e.note?.trim()).length, 'exercise note', 'exercise notes'),
+  ];
+  if (d.active) lines.push('A workout in progress');
+  if (d.templateDraft) lines.push('An unfinished template');
+  return lines;
+}
+
+async function exportBackup() {
+  const data = JSON.stringify({ ...state, exportedAt: new Date().toISOString(), app: 'Lift Log' }, null, 2);
+  const filename = `liftlog-backup-${todayKey().split('-').map(x => x.padStart(2, '0')).join('-')}.json`;
+  const summary = summarizeBackup(state).slice(0, 3).join(' · ');
+  // Inside claude.ai the page can't download files itself; it asks claude.ai to save it.
+  const dl = window.claude?.use ? await window.claude.use('downloads').catch(() => null) : null;
+  if (dl) {
+    try { await dl.save({ filename, data }); toast(`Backup saved · ${summary}`, 3500); return; }
+    catch (e) { if (e?.code === 'declined') { toast('Backup not saved'); return; } }
+  }
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  link.download = filename; document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  toast(`Backup downloaded · ${summary}`, 3500);
+}
+
+async function importBackup(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { toast('That file doesn’t look like a Lift Log backup'); return; }
+  if (!data || !Array.isArray(data.workouts) || !Array.isArray(data.exercises)) { toast('That file doesn’t look like a Lift Log backup'); return; }
+  const ok = await askConfirm({
+    title: 'Restore this backup?',
+    html: `<ul class="confirm-list">${summarizeBackup(data).map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+      <div class="confirm-body">It replaces everything in the app now. Your current data is kept as a safety copy.</div>`,
+    confirmLabel: 'Restore',
+  });
+  if (!ok) return;
+  try {
+    localStorage.setItem(STORE_KEY + '.replaced', JSON.stringify(state)); // safety copy of what was here
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    state = load();               // runs the same updates as a normal start, so older backups work too
+    templateDraft = state.templateDraft || null;
+    save(); applyTheme(); closeSheet(); render();
+    toast(`Restored · ${summarizeBackup(state).slice(0, 3).join(' · ')}`, 4000);
+  } catch { toast('Could not restore the backup'); }
+}
+
 /* ---------- Motivation ---------- */
 const lastPhrase = {};
 // Lower body = any leg, glute or hip group (built-in or your own, e.g. "Quads", "Hamstrings"),
@@ -1468,14 +1555,9 @@ function openSettings() {
     };
     $('#rep-lo', sheet).addEventListener('change', saveRange);
     $('#rep-hi', sheet).addEventListener('change', saveRange);
-    $('#import-file', sheet).addEventListener('change', async e => {
-      const file = e.target.files[0]; if (!file) return;
-      try {
-        const data = JSON.parse(await file.text());
-        if (!Array.isArray(data.workouts) || !Array.isArray(data.exercises)) throw new Error('bad file');
-        if (!confirm('Replace all current data with this backup?')) return;
-        state = { ...defaultState(), ...data, unit: 'kg' }; save(); applyTheme(); closeSheet(); render(); toast('Backup restored');
-      } catch { toast('That file doesn’t look like a backup'); }
+    $('#import-file', sheet).addEventListener('change', e => {
+      const file = e.target.files[0]; e.target.value = ''; // lets you pick the same file again
+      if (file) importBackup(file);
     });
   });
 }
@@ -1571,10 +1653,13 @@ document.addEventListener('click', e => {
     case 'repeat': {
       const src = id ? state.workouts.find(w => w.id === id)
         : [...state.workouts].sort((x, y) => new Date(y.date) - new Date(x.date))[0];
-      if (state.active && !confirm('You already have a workout in progress. Replace it?')) break;
-      closeSheet(); tab = 'train'; go('train');
-      startWorkout(src.entries.map(en => ({ exerciseId: en.exerciseId, sets: en.sets.map(s => ({ w: s.w, r: '' })) })));
-      state.active.title = src.title; if (src.templateId) state.active.templateId = src.templateId; save(); render();
+      const go2 = () => {
+        closeSheet(); tab = 'train'; go('train');
+        startWorkout(src.entries.map(en => ({ exerciseId: en.exerciseId, sets: en.sets.map(s => ({ w: s.w, r: '' })) })));
+        state.active.title = src.title; if (src.templateId) state.active.templateId = src.templateId; save(); render();
+      };
+      if (state.active) askConfirm({ title: 'Replace your current workout?', body: 'You have a workout in progress. Starting this one discards it.', confirmLabel: 'Replace', danger: true }).then(ok => ok && go2());
+      else go2();
       break;
     }
     case 'add-exercise': pickExercise(); break;
@@ -1611,7 +1696,10 @@ document.addEventListener('click', e => {
       break;
     }
     case 'remove-entry': a.entries.splice(+el.dataset.i, 1); save(); render(); break;
-    case 'discard': if (confirm('Discard this workout?')) { state.active = null; state.restEnd = null; renderRest(); save(); render(); } break;
+    case 'discard':
+      askConfirm({ title: 'Discard this workout?', body: 'The sets you logged in it won’t be saved.', confirmLabel: 'Discard', danger: true })
+        .then(ok => { if (ok && state.active) { state.active = null; state.restEnd = null; renderRest(); save(); render(); } });
+      break;
     case 'finish': finishWorkout(); break;
     case 'show-ex': showExercise(id); break;
     case 'edit-ex': editExercise(id); break;
@@ -1635,20 +1723,25 @@ document.addEventListener('click', e => {
     }
     case 'delete-ex':
       if (state.workouts.some(w => w.entries.some(en => en.exerciseId === id))) { toast('It’s used in past workouts — can’t delete'); break; }
-      if (confirm('Delete this exercise?')) { state.exercises = state.exercises.filter(x => x.id !== id); save(); closeSheet(); render(); }
+      askConfirm({ title: 'Delete this exercise?', confirmLabel: 'Delete', danger: true })
+        .then(ok => { if (ok) { state.exercises = state.exercises.filter(x => x.id !== id); save(); closeSheet(); render(); } });
       break;
     case 'ex-filter': exFilter = el.dataset.g; render(); break;
     case 'toggle-group': el.classList.toggle('active'); break;
     case 'open-workout': openWorkout(id); break;
     case 'delete-workout':
-      if (confirm('Delete this workout permanently?')) { state.workouts = state.workouts.filter(w => w.id !== id); save(); closeSheet(); render(); }
+      askConfirm({ title: 'Delete this workout?', body: 'It’s removed from your history and stats for good.', confirmLabel: 'Delete', danger: true })
+        .then(ok => { if (ok) { state.workouts = state.workouts.filter(w => w.id !== id); save(); closeSheet(); render(); } });
       break;
     case 'add-note': {
       const t = $('#note-input').value.trim(); if (!t) break;
       state.notes.push({ id: uid(), date: new Date().toISOString(), text: t }); save(); render();
       break;
     }
-    case 'del-note': if (confirm('Delete note?')) { state.notes = state.notes.filter(n => n.id !== id); save(); render(); } break;
+    case 'del-note':
+      askConfirm({ title: 'Delete this note?', confirmLabel: 'Delete', danger: true })
+        .then(ok => { if (ok) { state.notes = state.notes.filter(n => n.id !== id); save(); render(); } });
+      break;
     case 'theme':
       state.theme = el.dataset.v; save(); applyTheme();
       document.querySelectorAll('.theme-opt').forEach(b => { const on = b.dataset.v === state.theme; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on); });
@@ -1675,8 +1768,8 @@ document.addEventListener('click', e => {
     }
     case 'start-template': {
       const t = state.templates.find(x => x.id === id); if (!t) break;
-      if (state.active && !confirm('You already have a workout in progress. Replace it?')) break;
-      startFromTemplate(t);
+      if (state.active) askConfirm({ title: 'Replace your current workout?', body: 'You have a workout in progress. Starting this one discards it.', confirmLabel: 'Replace', danger: true }).then(ok => ok && startFromTemplate(t));
+      else startFromTemplate(t);
       break;
     }
     case 'save-template': {
@@ -1711,12 +1804,12 @@ document.addEventListener('click', e => {
       setDraft(null); closeSheet(); render(); toast('Template saved');
       break;
     }
-    case 't-delete':
-      if (confirm('Delete this template?')) {
-        state.templates = state.templates.filter(x => x.id !== templateDraft.id);
-        setDraft(null); closeSheet(); render();
-      }
+    case 't-delete': {
+      const doomed = templateDraft?.id;
+      askConfirm({ title: 'Delete this template?', body: 'Your past workouts stay in your history.', confirmLabel: 'Delete', danger: true })
+        .then(ok => { if (ok) { state.templates = state.templates.filter(x => x.id !== doomed); setDraft(null); closeSheet(); render(); } });
       break;
+    }
     // Body weight
     case 'bw-log': if (logBodyweight($('#bw-input').value)) { render(); toast('Weight logged'); } break;
     case 'bw-history': showBodyweightHistory(); break;
@@ -1735,14 +1828,7 @@ document.addEventListener('click', e => {
       } catch { toast('Could not restore the copy'); }
       break;
     }
-    case 'export': {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `liftlog-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-      break;
-    }
+    case 'export': exportBackup(); break;
   }
 });
 
