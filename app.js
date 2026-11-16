@@ -54,6 +54,7 @@ function load() {
     }
     const s = { ...defaultState(), ...saved };
     s.unit = 'kg'; // the app uses kilograms only
+    if (s.theme === 'blue') s.theme = 'crimson'; // Blue was replaced by Crimson
     // Tolerate missing or damaged pieces instead of failing the whole load.
     const def = defaultState();
     ['exercises', 'workouts', 'templates', 'notes', 'bodyweight'].forEach(k => { if (!Array.isArray(s[k])) s[k] = def[k]; });
@@ -289,6 +290,7 @@ function barChart(bars, { height = 120, label = 'Workouts per week', format = v 
   const max = Math.max(1, ...bars.map(b => b.v));
   const bw = W / bars.length;
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">
+    <defs><linearGradient id="crimsonBars" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ef5a70"/><stop offset="1" stop-color="#9e132b"/></linearGradient></defs>
     ${bars.map((b, i) => {
       const h = b.v ? Math.max(4, (b.v / max) * (H - pb - pt)) : 3;
       return `<rect class="bar ${b.v ? '' : 'zero'}" x="${i * bw + bw * 0.2}" y="${H - pb - h}" width="${bw * 0.6}" height="${h}" rx="3"><title>${esc(b.label)}: ${esc(format(b.v))}</title></rect>
@@ -1485,9 +1487,9 @@ const THEMES = [
   { id: 'dark', name: 'Dark', bg: '#111111', accent: '#ececea' },
   { id: 'pink', name: 'Pink', bg: '#ffedf4', accent: '#f07fa8' },
   { id: 'green', name: 'Green', bg: '#f1f8f3', accent: '#2c7a52' },
-  { id: 'blue', name: 'Blue', bg: '#f0f6fc', accent: '#2a68ae' },
   { id: 'sunset', name: 'Sunset', bg: '#fff4ec', accent: '#c94e33' },
   { id: 'plum', name: 'Plum', bg: '#171021', accent: '#c9a6ff' },
+  { id: 'crimson', name: 'Crimson', bg: '#150a0c', accent: '#e8475f' },
 ];
 
 function applyTheme() {

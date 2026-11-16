@@ -42,17 +42,32 @@
   --line: #d4e9db; --accent: #2c7a52; --accent-text: #ffffff; --soft: #e1f0e6;
   --danger: #b03a3a; --chart: #2c7a52; --motivate-fg: #1f5a3d;
 }
-:root[data-theme="blue"] {
-  --bg: #f0f6fc; --surface: #fbfdff; --text: #1a2e45; --muted: #4d6b8a;
-  --line: #d2e2f2; --accent: #2a68ae; --accent-text: #ffffff; --soft: #e0ebf7;
-  --danger: #b03a3a; --chart: #2a68ae; --motivate-fg: #1f4d82;
-}
 /* Sunset: warm peach and apricot, coral accent, deep plum text */
 :root[data-theme="sunset"] {
   --bg: #fff4ec; --surface: #fffaf6; --text: #45283a; --muted: #875a55;
   --line: #f6d9c8; --accent: #c94e33; --accent-text: #ffffff; --soft: #fde3d4;
   --danger: #a83232; --chart: #c94e33; --motivate-fg: #8c3527;
 }
+/* Crimson: a dark theme with blood-red gradients */
+:root[data-theme="crimson"] {
+  --bg: #150a0c; --surface: #201013; --text: #f6e8ea; --muted: #c49ca1;
+  --line: #3b1a1f; --accent: #c41c37; --accent-text: #ffffff; --soft: #2c1418;
+  --danger: #ff8a7a; --chart: #e8475f;
+  --motivate-bg: #fbeff0; --motivate-fg: #8c1426; --motivate-line: #ffffff;
+  --crimson-grad: linear-gradient(135deg, #8f0f24 0%, #c41c37 55%, #d42a45 100%);
+  color-scheme: dark;
+}
+:root[data-theme="crimson"] .btn:not(.ghost):not(.danger),
+:root[data-theme="crimson"] .rest-bar,
+:root[data-theme="crimson"] .pill.done,
+:root[data-theme="crimson"] .chip.active,
+:root[data-theme="crimson"] .plan-day.today .plan-date { background: var(--crimson-grad); border-color: transparent; }
+:root[data-theme="crimson"] .goal-bar span,
+:root[data-theme="crimson"] .mfill { background: linear-gradient(90deg, #a3142c, #e8475f); }
+:root[data-theme="crimson"] .chart .bar { fill: url(#crimsonBars); }
+:root[data-theme="crimson"] .chart .area { opacity: .16; }
+:root[data-theme="crimson"] .sheet-backdrop { background: rgba(10, 0, 2, .62); }
+
 /* Plum: a dark purple theme */
 :root[data-theme="plum"] {
   --bg: #171021; --surface: #221830; --text: #f1e8fc; --muted: #b3a0cc;
@@ -63,7 +78,7 @@
 }
 :root[data-theme="plum"] .chart .area { opacity: .16; }
 :root[data-theme="plum"] .sheet-backdrop { background: rgba(5, 0, 15, .6); }
-:root[data-theme="green"] .chart .area, :root[data-theme="blue"] .chart .area, :root[data-theme="sunset"] .chart .area { opacity: .1; }
+:root[data-theme="green"] .chart .area, :root[data-theme="sunset"] .chart .area { opacity: .1; }
 :root[data-theme="sunset"] .btn:not(.ghost):not(.danger) { background: linear-gradient(135deg, #d9603c, #c2416a); }
 
 /* Theme picker */

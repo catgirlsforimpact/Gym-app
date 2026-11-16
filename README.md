@@ -14,7 +14,7 @@ A minimal workout tracker. Log exercises, read form tips, track your progress an
 - **Progress**: monthly and yearly workout goals; workouts this week, month and year, week streak, average workouts per week and average workout length; a weekly chart you can switch between workouts, sets and weight lifted; sets per muscle over the last 7 days against the common 10–20 sets a week for growth; personal records (latest five and how many in the last 30 days); most improved exercises over 8 weeks; an estimated 1-rep-max trend per exercise; body weight; and full history.
 - **Body weight**: log your weight in the Progress tab and see the trend and your 30-day change. One entry per day; logging again the same day replaces it.
 - **Notes**: a journal for free-form notes. It also collects your workout notes and exercise notes in one place.
-- Eight themes (Auto, Light, Dark, Pink, Green, Blue, Sunset and Plum, a dark purple), kilograms, JSON backup export and import.
+- Eight themes (Auto, Light, Dark, Pink, Green, Sunset, Plum (dark purple) and Crimson (dark with blood-red gradients)), kilograms, JSON backup export and import.
 - PRs are detected when you finish a workout.
 
 ## Run it
