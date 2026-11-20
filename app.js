@@ -715,7 +715,6 @@ let restHandle = null;
 
 function startRest(seconds = state.restSeconds) {
   state.restEnd = Date.now() + seconds * 1000; save();
-  primeAudio();
   renderRest();
 }
 function stopRest() { state.restEnd = null; save(); renderRest(); }
@@ -753,29 +752,8 @@ function renderRest() {
 
 function restDone() {
   state.restEnd = null; save(); renderRest();
-  beep();
   navigator.vibrate?.([200, 100, 200]);
   toast('Rest over — next set');
-}
-
-// Short beep with Web Audio. The context is created on a user tap so browsers allow sound.
-let audioCtx = null;
-function primeAudio() {
-  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume?.(); } catch { /* no audio */ }
-}
-function beep() {
-  if (!audioCtx) return;
-  try {
-    [0, 0.25].forEach(offset => {
-      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
-      const t = audioCtx.currentTime + offset;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-      o.start(t); o.stop(t + 0.2);
-    });
-  } catch { /* ignore */ }
 }
 
 // Catch up if the app was in the background when the rest ended.
