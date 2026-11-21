@@ -153,6 +153,15 @@ function relDay(iso) {
   if (diff < 7) return d.toLocaleDateString(undefined, { weekday: 'long' });
   return fmtDate(iso);
 }
+// Clock times, e.g. "18:05", and helpers for time inputs.
+const clock = d => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const timeValue = d => { const x = new Date(d); return `${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`; };
+function atTime(day, hhmm) {
+  const [h, m] = String(hhmm || '').split(':').map(Number);
+  if (!(h >= 0 && h < 24 && m >= 0 && m < 60)) return null;
+  const d = new Date(day); d.setHours(h, m, 0, 0); return d;
+}
+
 function fmtDuration(ms) {
   const m = Math.floor(ms / 60000), h = Math.floor(m / 60);
   return h ? `${h}h ${m % 60}m` : `${m}m`;
@@ -519,7 +528,7 @@ views.train = () => {
     <div class="workout-head">
       <div class="row between">
         <input class="title-input" data-field="title" value="${esc(a.title)}" aria-label="Workout name" />
-        <span class="timer" id="timer"></span>
+        <button class="timer-btn" data-act="edit-start" aria-label="Change start time"><span class="timer" id="timer"></span><span class="started">Started ${clock(a.date)}</span></button>
       </div>
       <div class="muted small">${fmtDate(a.date, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
     </div>
@@ -1469,7 +1478,11 @@ function openWorkout(id) {
   const w = state.workouts.find(x => x.id === id); if (!w) return;
   openSheet(`
     <h2>${esc(w.title || 'Workout')}</h2>
-    <div class="muted small">${fmtDate(w.date, { weekday: 'long', month: 'long', day: 'numeric' })}${w.duration ? ` · ${fmtDuration(w.duration)}` : ''} · ${fmt(workoutVolume(w))} ${state.unit}</div>
+    <div class="muted small">${fmtDate(w.date, { weekday: 'long', month: 'long', day: 'numeric' })} · ${fmt(workoutVolume(w))} ${state.unit}</div>
+    <div class="row between small" style="margin-top:4px">
+      <span>${clock(w.date)}${w.duration ? `–${clock(+new Date(w.date) + w.duration)} · <b>${fmtDuration(w.duration)}</b>` : ''}</span>
+      <button class="link" data-act="edit-wtime" data-id="${w.id}">Edit time</button>
+    </div>
     ${w.entries.map(en => `
       <div class="label">${esc(exById(en.exerciseId)?.name || 'Unknown')}</div>
       <div class="small">${en.sets.map((s, i) => `<div class="row between" style="padding:4px 0"><span class="muted">Set ${i + 1}</span><span>${fmt(s.w)} ${state.unit} × ${s.r}</span></div>`).join('')}</div>
@@ -1807,6 +1820,45 @@ document.addEventListener('click', e => {
       break;
     }
     case 'export': exportBackup(); break;
+    case 'edit-start': {
+      if (!a) break;
+      let val = timeValue(a.date);
+      const p = askConfirm({ title: 'When did you start?', body: 'Set this if you began training before you tapped Start.', confirmLabel: 'Save',
+        html: `<input type="time" id="start-time" class="time-input" value="${val}" />` });
+      $('#start-time').addEventListener('input', e => { val = e.target.value; });
+      p.then(ok => {
+        if (!ok || !state.active) return;
+        const d = atTime(state.active.date, val);
+        if (!d) { toast('Pick a time, like 18:05'); return; }
+        if (d > new Date()) { toast('The start can’t be later than now'); return; }
+        state.active.date = d.toISOString(); save(); render();
+        toast(`Start set to ${clock(d)}`);
+      });
+      break;
+    }
+    case 'edit-wtime': {
+      const w = state.workouts.find(x => x.id === id); if (!w) break;
+      let sv = timeValue(w.date), fv = w.duration ? timeValue(+new Date(w.date) + w.duration) : '';
+      const p = askConfirm({ title: 'Workout time', confirmLabel: 'Save',
+        html: `<div class="time-pair">
+            <label><span>Started</span><input type="time" id="w-start" class="time-input" value="${sv}" /></label>
+            <label><span>Finished</span><input type="time" id="w-end" class="time-input" value="${fv}" /></label>
+          </div>` });
+      $('#w-start').addEventListener('input', e => { sv = e.target.value; });
+      $('#w-end').addEventListener('input', e => { fv = e.target.value; });
+      p.then(ok => {
+        if (!ok) return;
+        const start = atTime(w.date, sv), end = atTime(w.date, fv);
+        if (!start || !end) { toast('Pick both times, like 18:05 and 19:15'); return; }
+        if (end <= start) end.setDate(end.getDate() + 1); // finished after midnight
+        const ms = end - start;
+        if (ms > 6 * 3600e3) { toast('That’s over 6 hours. Check the times'); return; }
+        w.date = start.toISOString(); w.duration = ms; save();
+        openWorkout(w.id); render();
+        toast(`Saved · ${fmtDuration(ms)}`);
+      });
+      break;
+    }
   }
 });
 
