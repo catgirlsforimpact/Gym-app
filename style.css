@@ -430,3 +430,8 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .time-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .time-pair span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 14px; }
 .time-pair .time-input { margin-top: 6px; }
+
+/* Cooldown stretch stopwatch: same place as the rest bar, outlined instead of filled */
+.rest-bar.stretch-bar, :root[data-theme] .rest-bar.stretch-bar { background: var(--surface); color: var(--text); border: 2px solid var(--accent); }
+.stretch-bar .rest-label { color: var(--muted); opacity: 1; }
+.stretch-bar button { background: var(--accent); color: var(--accent-text); font-weight: 600; padding: 7px 14px; }

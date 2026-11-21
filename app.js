@@ -23,6 +23,7 @@ function defaultState() {
     restSeconds: 90,
     autoRest: true, // start rest timer when a set's reps are entered
     restEnd: null,  // timestamp (ms) when current rest ends
+    stretchStart: null, // timestamp (ms) when the cooldown stretch stopwatch started
     motivation: true, // show motivational phrases
     repRange: [8, 13], // app-wide rep range for progression suggestions
     goals: { month: null, year: null }, // workout goals (counts)
@@ -535,9 +536,10 @@ views.train = () => {
 
     ${a.entries.map((en, i) => entryBlock(en, i, a.entries.length)).join('') || `<div class="empty">Add your first exercise.</div>`}
 
-    <div class="row" style="margin-top:18px">
-      <button class="btn ghost" style="flex:1" data-act="add-exercise">+ Add exercise</button>
-      <button class="btn ghost" data-act="rest-start">Rest ${fmtClock(state.restSeconds)}</button>
+    <button class="btn ghost block" style="margin-top:18px" data-act="add-exercise">+ Add exercise</button>
+    <div class="row" style="margin-top:10px">
+      <button class="btn ghost" style="flex:1" data-act="rest-start">Rest ${fmtClock(state.restSeconds)}</button>
+      <button class="btn ghost" style="flex:1" data-act="stretch-start">Stretch</button>
     </div>
     ${a.entries.length ? `<button class="link" style="margin-top:12px" data-act="save-template">Save as template</button>` : ''}
 
@@ -692,6 +694,7 @@ function finishWorkout() {
     const now = Math.max(...en.sets.map(s => e1rm(s.w, s.r)));
     return prev > 0 && now > prev;
   }).map(en => exById(en.exerciseId)?.name);
+  if (state.stretchStart) stopStretch({ quiet: true });
   a.duration = Date.now() - new Date(a.date);
   state.workouts.push(a);
   state.active = null;
@@ -713,6 +716,7 @@ function showWorkoutComplete(w, prs) {
         <div class="stat"><div class="v">${sets}</div><div class="k">Sets</div></div>
         <div class="stat"><div class="v">${vol >= 10000 ? fmt(vol / 1000) + 'k' : fmt(vol)}</div><div class="k">${state.unit} lifted</div></div>
       </div>
+      ${w.stretch ? `<div class="small muted" style="margin-top:10px">Including ${fmtDuration(w.stretch)} of cooldown stretching</div>` : ''}
       ${prs.length ? `<div class="card pr-card">🏆 New personal record${prs.length > 1 ? 's' : ''}: <strong>${prs.map(esc).join(', ')}</strong></div>` : ''}
       <button class="btn block" style="margin-top:20px" data-act="close-sheet">Done</button>
     </div>
@@ -723,6 +727,7 @@ function showWorkoutComplete(w, prs) {
 let restHandle = null;
 
 function startRest(seconds = state.restSeconds) {
+  if (state.stretchStart) stopStretch();
   state.restEnd = Date.now() + seconds * 1000; save();
   renderRest();
 }
@@ -732,10 +737,50 @@ function adjustRest(delta) {
   state.restEnd = Math.max(Date.now() + 1000, state.restEnd + delta * 1000); save(); renderRest();
 }
 
+/* ---------- Cooldown stretch stopwatch ----------
+   Counts up from 0:00 until you stop it. The time is added to the workout. */
+let stretchHandle = null;
+const stretchClock = ms => {
+  const t = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+};
+function startStretch() {
+  if (state.stretchStart) return;
+  if (state.restEnd) { state.restEnd = null; renderRest(); }
+  state.stretchStart = Date.now(); save(); renderStretch();
+}
+// Stops the stopwatch and returns how long it ran. With keep, the time is added to the workout.
+function stopStretch({ keep = true, quiet = false } = {}) {
+  if (!state.stretchStart) return 0;
+  const ms = Date.now() - state.stretchStart;
+  state.stretchStart = null;
+  if (keep && state.active && ms >= 1000) state.active.stretch = (state.active.stretch || 0) + ms;
+  save(); renderStretch();
+  if (keep && !quiet && ms >= 1000) toast(`Stretching saved · ${stretchClock(ms)}`);
+  return ms;
+}
+function renderStretch() {
+  clearInterval(stretchHandle);
+  let bar = $('#stretch-bar');
+  document.body.classList.toggle('resting', !!state.restEnd || !!state.stretchStart);
+  if (!state.stretchStart) { bar?.remove(); return; }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'stretch-bar'; bar.className = 'rest-bar stretch-bar';
+    bar.innerHTML = `
+      <span class="rest-label">Stretching</span>
+      <span class="rest-time" id="stretch-time">0:00</span>
+      <button data-act="stretch-stop">Stop</button>`;
+    document.body.appendChild(bar);
+  }
+  const tick = () => { const el = $('#stretch-time'); if (el && state.stretchStart) el.textContent = stretchClock(Date.now() - state.stretchStart); };
+  tick(); stretchHandle = setInterval(tick, 250);
+}
+
 function renderRest() {
   clearInterval(restHandle);
   let bar = $('#rest-bar');
-  document.body.classList.toggle('resting', !!state.restEnd);
+  document.body.classList.toggle('resting', !!state.restEnd || !!state.stretchStart);
   if (!state.restEnd) { bar?.remove(); return; }
   if (!bar) {
     bar = document.createElement('div');
@@ -1480,7 +1525,7 @@ function openWorkout(id) {
     <h2>${esc(w.title || 'Workout')}</h2>
     <div class="muted small">${fmtDate(w.date, { weekday: 'long', month: 'long', day: 'numeric' })} · ${fmt(workoutVolume(w))} ${state.unit}</div>
     <div class="row between small" style="margin-top:4px">
-      <span>${clock(w.date)}${w.duration ? `–${clock(+new Date(w.date) + w.duration)} · <b>${fmtDuration(w.duration)}</b>` : ''}</span>
+      <span>${clock(w.date)}${w.duration ? `–${clock(+new Date(w.date) + w.duration)} · <b>${fmtDuration(w.duration)}</b>` : ''}${w.stretch ? ` · stretched ${fmtDuration(w.stretch)}` : ''}</span>
       <button class="link" data-act="edit-wtime" data-id="${w.id}">Edit time</button>
     </div>
     ${w.entries.map(en => `
@@ -1689,7 +1734,7 @@ document.addEventListener('click', e => {
     case 'remove-entry': a.entries.splice(+el.dataset.i, 1); save(); render(); break;
     case 'discard':
       askConfirm({ title: 'Discard this workout?', body: 'The sets you logged in it won’t be saved.', confirmLabel: 'Discard', danger: true })
-        .then(ok => { if (ok && state.active) { state.active = null; state.restEnd = null; renderRest(); save(); render(); } });
+        .then(ok => { if (ok && state.active) { stopStretch({ keep: false }); state.active = null; state.restEnd = null; renderRest(); save(); render(); } });
       break;
     case 'finish': finishWorkout(); break;
     case 'show-ex': showExercise(id); break;
@@ -1739,6 +1784,8 @@ document.addEventListener('click', e => {
       break;
     // Rest timer
     case 'rest-start': startRest(); break;
+    case 'stretch-start': startStretch(); break;
+    case 'stretch-stop': stopStretch(); break;
     case 'rest-stop': stopRest(); break;
     case 'rest-adj': adjustRest(+el.dataset.v); break;
     case 'rest-len': state.restSeconds = +el.dataset.v; save(); openSettings(); if (tab === 'train') render(); break;
@@ -1894,6 +1941,7 @@ $('#settings-btn').addEventListener('click', openSettings);
 applyTheme();
 render();
 renderRest();
+renderStretch();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
