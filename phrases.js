@@ -71,6 +71,21 @@ const PHRASES = {
     'Done. That glow you\'re getting is earned right here. Keep moving.',
   ],
 
+  // After the very last set of the whole workout: a nudge to go stretch
+  allSetsDone: [
+    'Last set done. Don\'t run off yet, girl. Stretch first.',
+    'Sets done. A cat always stretches after the hunt. Your turn.',
+    'Workout\'s done, but you\'re not. Stretch first.',
+    'Done lifting. Now give your legs the stretch they earned.',
+    'That\'s the work. Now the cooldown. Long, slow stretches, like a cat in the sun.',
+    'Finished. Don\'t skip the stretch, girl. Recovery builds the shape too.',
+    'Last rep done. Breathe, slow down, and stretch it out.',
+    'Every set done. Strength and flexibility together make the prettiest lines. Stretch.',
+    'That\'s everything. Stretch now so you come back stronger next time.',
+    'Lifting\'s over. Stretching isn\'t optional. Go.',
+    'That\'s the last set. Good girls cool down. Stretch.',
+  ],
+
   // When the whole workout is finished
   workoutDone: [
     'Strong body, strong mind. Today you fed both.',

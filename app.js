@@ -346,7 +346,11 @@ function checkExerciseMilestone(i) {
   const total = en.sets.length;
   const done = en.sets.filter(s => num(s.r) > 0).length;
   let kind = null;
-  if (done === total) kind = 'exerciseDone';
+  if (done === total) {
+    // The very last set of the whole workout gets a nudge to stretch instead of "next one".
+    const allDone = a.entries.every(e => e.sets.every(s => num(s.r) > 0));
+    kind = allDone && PHRASES.allSetsDone?.length ? 'allSetsDone' : 'exerciseDone';
+  }
   else if (total >= 2 && done === total - 1) kind = 'oneSetLeft';
   en.key ||= uid(); // stays with the exercise when it is moved
   const key = `${a.id}:${en.key}`;
