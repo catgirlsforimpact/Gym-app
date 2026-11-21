@@ -35,6 +35,14 @@ const PHRASES = {
     'One more set. A cat stretches before she leaps. You\'ve stretched. Leap.',
     'Last set. The outfit you\'re saving for is waiting. Earn it.',
     'One set left. Pretty girls finish their sets too. Go.',
+    'Last set. Make it the best one, not the easiest one.',
+    'One set left. Tired is not the same as done.',
+    'Last set. Quiet confidence, loud effort.',
+    'One more set. Every bit of this shows in a sleeveless dress.',
+    'One more set. That backless dress is counting on you.',
+    'Last set of {exercise}. Every rep with good form. No shortcuts.',
+    'One set left. Do it for the girl who almost didn\'t come today.',
+    'Last set. Graceful outside, fierce inside. Go.',
   ],
 
   // When every set of an exercise is done
@@ -117,6 +125,14 @@ const PHRASES = {
     'Graceful and strong, like a cat. Lovely work today, girl.',
     'Good girl. You get prettier every time you show up for yourself.',
     'That post-workout glow suits you, girl. Rest well.',
+    'Good girl. Another workout closer to the body you\'re dreaming of.',
+    'Rest, eat, sleep. You\'ve done your part today, girl.',
+    'Good girl. Proud of you for showing up when it would have been easy not to.',
+    'Curl up like a cat tonight. Warm, cozy, and very well rested.',
+    'Good girl. That summer dress is getting closer every week.',
+    'You look strong today. You\'ll look even stronger next month. Lovely work.',
+    'Every session makes you a little more you. Great job, girl.',
+    'Warm shower, good food, soft blanket. You deserve all three.',
   ],
 
   // Lower body: when only one set is left on a leg or glute exercise
@@ -142,6 +158,9 @@ const PHRASES = {
     'Last set. Swimsuit season starts right now.',
     'Last set. Pretty legs are strong legs. Finish it.',
     'One set left. A cat is pretty because she\'s strong. Same goes for you. Push.',
+    'Last set of {exercise}. Full range, every rep. Half reps build half the shape.',
+    'One more set. That pencil skirt is going to fit like it was made for you.',
+    'One set left. A fitted dress shows everything you build here. Earn it.',
   ],
 
   // Lower body: when a leg or glute exercise is done
@@ -169,6 +188,8 @@ const PHRASES = {
     '{exercise} done. Your silhouette is changing. Keep pushing.',
     'Done. Skirts, dresses, swimsuits. You\'re building for all of them. Next.',
     'Done. Strong legs, pretty legs. Same thing. Keep going.',
+    'Done. Strong thighs, strong hips, shape coming. Keep moving.',
+    '{exercise} done. That\'s how you fill out a dress. Next.',
   ],
 
   // Lower body: after a workout that included leg or glute exercises
@@ -186,5 +207,10 @@ const PHRASES = {
     'Every leg day is shaping your silhouette. Be proud of today.',
     'Strong legs, the graceful kind a cat would be proud of. Good work, girl.',
     'Pretty and strong, like a cat stretching in the sun. Lovely work today.',
+    'Your legs are getting stronger and more beautiful every week. Great session.',
+    'Rest those legs, girl. Growth happens while you sleep.',
+    'Good girl. Short skirts and summer dresses, here you come.',
+    'Every leg day adds a little more shape. So proud of today.',
+    'Strong legs, soft heart. Lovely work today, girl.',
   ],
 };
