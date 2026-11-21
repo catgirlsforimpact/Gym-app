@@ -431,7 +431,16 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .time-pair span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 14px; }
 .time-pair .time-input { margin-top: 6px; }
 
-/* Cooldown stretch stopwatch: same place as the rest bar, outlined instead of filled */
-.rest-bar.stretch-bar, :root[data-theme] .rest-bar.stretch-bar { background: var(--surface); color: var(--text); border: 2px solid var(--accent); }
-.stretch-bar .rest-label { color: var(--muted); opacity: 1; }
-.stretch-bar button { background: var(--accent); color: var(--accent-text); font-weight: 600; padding: 7px 14px; }
+/* Cooldown stretch stopwatch: a big card in the middle of the screen */
+.stretch-card {
+  position: fixed; z-index: 16; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(320px, calc(100% - 32px)); box-sizing: border-box;
+  background: var(--surface); color: var(--text); border: 2px solid var(--accent); border-radius: 24px;
+  padding: 22px 20px 20px; text-align: center;
+  box-shadow: 0 18px 50px rgba(0,0,0,.22); animation: pop .22s ease-out;
+}
+.stretch-label { font-size: 13px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.stretch-time { font-size: 68px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; margin: 8px 0 18px; font-variant-numeric: tabular-nums; }
+.stretch-actions { display: flex; gap: 10px; }
+.stretch-actions .btn { flex: 1; padding: 13px; font-size: 16px; }
+@keyframes pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }

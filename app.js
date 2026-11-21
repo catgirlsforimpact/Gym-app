@@ -24,6 +24,7 @@ function defaultState() {
     autoRest: true, // start rest timer when a set's reps are entered
     restEnd: null,  // timestamp (ms) when current rest ends
     stretchStart: null, // timestamp (ms) when the cooldown stretch stopwatch started
+    stretchShown: null, // ms shown on the stopped stopwatch (null = hidden)
     motivation: true, // show motivational phrases
     repRange: [8, 13], // app-wide rep range for progression suggestions
     goals: { month: null, year: null }, // workout goals (counts)
@@ -694,7 +695,7 @@ function finishWorkout() {
     const now = Math.max(...en.sets.map(s => e1rm(s.w, s.r)));
     return prev > 0 && now > prev;
   }).map(en => exById(en.exerciseId)?.name);
-  if (state.stretchStart) stopStretch({ quiet: true });
+  stopStretch({ close: true });
   a.duration = Date.now() - new Date(a.date);
   state.workouts.push(a);
   state.active = null;
@@ -727,7 +728,7 @@ function showWorkoutComplete(w, prs) {
 let restHandle = null;
 
 function startRest(seconds = state.restSeconds) {
-  if (state.stretchStart) stopStretch();
+  if (state.stretchStart || state.stretchShown != null) closeStretch();
   state.restEnd = Date.now() + seconds * 1000; save();
   renderRest();
 }
@@ -738,49 +739,63 @@ function adjustRest(delta) {
 }
 
 /* ---------- Cooldown stretch stopwatch ----------
-   Counts up from 0:00 until you stop it. The time is added to the workout. */
+   Counts up from 0:00 until you stop it. Stopping saves the time to the workout
+   and leaves the stopped time on screen until you tap Done (or Continue). */
 let stretchHandle = null;
 const stretchClock = ms => {
   const t = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, '0');
   return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
 };
-function startStretch() {
+// What the stopwatch shows: time from earlier runs (before Continue) plus the current run.
+const stretchElapsed = () => (state.stretchShown || 0) + (state.stretchStart ? Date.now() - state.stretchStart : 0);
+function startStretch({ resume = false } = {}) {
   if (state.stretchStart) return;
   if (state.restEnd) { state.restEnd = null; renderRest(); }
+  if (!resume) state.stretchShown = 0;
   state.stretchStart = Date.now(); save(); renderStretch();
 }
-// Stops the stopwatch and returns how long it ran. With keep, the time is added to the workout.
-function stopStretch({ keep = true, quiet = false } = {}) {
-  if (!state.stretchStart) return 0;
-  const ms = Date.now() - state.stretchStart;
-  state.stretchStart = null;
-  if (keep && state.active && ms >= 1000) state.active.stretch = (state.active.stretch || 0) + ms;
+// Stops the stopwatch and returns how long this run lasted. With keep, the time is added to the workout.
+// The stopped time stays on screen unless close is set.
+function stopStretch({ keep = true, close = false } = {}) {
+  let ms = 0;
+  if (state.stretchStart) {
+    ms = Date.now() - state.stretchStart;
+    state.stretchShown = (state.stretchShown || 0) + ms;
+    state.stretchStart = null;
+    if (keep && state.active && ms >= 1000) state.active.stretch = (state.active.stretch || 0) + ms;
+  }
+  if (close) state.stretchShown = null;
   save(); renderStretch();
-  if (keep && !quiet && ms >= 1000) toast(`Stretching saved · ${stretchClock(ms)}`);
   return ms;
 }
+function closeStretch() { stopStretch({ close: true }); }
 function renderStretch() {
   clearInterval(stretchHandle);
-  let bar = $('#stretch-bar');
-  document.body.classList.toggle('resting', !!state.restEnd || !!state.stretchStart);
-  if (!state.stretchStart) { bar?.remove(); return; }
-  if (!bar) {
-    bar = document.createElement('div');
-    bar.id = 'stretch-bar'; bar.className = 'rest-bar stretch-bar';
-    bar.innerHTML = `
-      <span class="rest-label">Stretching</span>
-      <span class="rest-time" id="stretch-time">0:00</span>
-      <button data-act="stretch-stop">Stop</button>`;
-    document.body.appendChild(bar);
+  let card = $('#stretch-bar');
+  const running = !!state.stretchStart, shown = running || state.stretchShown != null;
+  if (!shown || !state.active) { card?.remove(); if (!state.active) state.stretchShown = null; return; }
+  if (!card) {
+    card = document.createElement('div');
+    card.id = 'stretch-bar'; card.className = 'stretch-card';
+    card.setAttribute('role', 'timer');
+    document.body.appendChild(card);
   }
-  const tick = () => { const el = $('#stretch-time'); if (el && state.stretchStart) el.textContent = stretchClock(Date.now() - state.stretchStart); };
+  card.classList.toggle('stopped', !running);
+  card.innerHTML = `
+    <div class="stretch-label">${running ? 'Stretching' : 'Stretch time saved'}</div>
+    <div class="stretch-time" id="stretch-time">${stretchClock(stretchElapsed())}</div>
+    <div class="stretch-actions">${running
+      ? '<button class="btn" data-act="stretch-stop">Stop</button>'
+      : '<button class="btn ghost" data-act="stretch-resume">Continue</button><button class="btn" data-act="stretch-close">Done</button>'}</div>`;
+  if (!running) return;
+  const tick = () => { const el = $('#stretch-time'); if (el && state.stretchStart) el.textContent = stretchClock(stretchElapsed()); };
   tick(); stretchHandle = setInterval(tick, 250);
 }
 
 function renderRest() {
   clearInterval(restHandle);
   let bar = $('#rest-bar');
-  document.body.classList.toggle('resting', !!state.restEnd || !!state.stretchStart);
+  document.body.classList.toggle('resting', !!state.restEnd);
   if (!state.restEnd) { bar?.remove(); return; }
   if (!bar) {
     bar = document.createElement('div');
@@ -1734,7 +1749,7 @@ document.addEventListener('click', e => {
     case 'remove-entry': a.entries.splice(+el.dataset.i, 1); save(); render(); break;
     case 'discard':
       askConfirm({ title: 'Discard this workout?', body: 'The sets you logged in it won’t be saved.', confirmLabel: 'Discard', danger: true })
-        .then(ok => { if (ok && state.active) { stopStretch({ keep: false }); state.active = null; state.restEnd = null; renderRest(); save(); render(); } });
+        .then(ok => { if (ok && state.active) { stopStretch({ keep: false, close: true }); state.active = null; state.restEnd = null; renderRest(); save(); render(); } });
       break;
     case 'finish': finishWorkout(); break;
     case 'show-ex': showExercise(id); break;
@@ -1786,6 +1801,8 @@ document.addEventListener('click', e => {
     case 'rest-start': startRest(); break;
     case 'stretch-start': startStretch(); break;
     case 'stretch-stop': stopStretch(); break;
+    case 'stretch-resume': startStretch({ resume: true }); break;
+    case 'stretch-close': closeStretch(); break;
     case 'rest-stop': stopRest(); break;
     case 'rest-adj': adjustRest(+el.dataset.v); break;
     case 'rest-len': state.restSeconds = +el.dataset.v; save(); openSettings(); if (tab === 'train') render(); break;
