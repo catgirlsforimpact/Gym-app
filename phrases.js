@@ -77,6 +77,12 @@ const PHRASES = {
     'Done. Shape is built on the days you don\'t feel like it. Keep moving.',
     '{exercise} done. Strong is the prettiest thing you can be. Next.',
     'Done. That glow you\'re getting is earned right here. Keep moving.',
+    '{exercise} done. Tired is just the feeling of getting better. Next.',
+    'Done. That sleeveless dress just got a reason to come out. Next.',
+    'Done. You didn\'t come here to stop halfway. Next one.',
+    '{exercise} done. No one is coming to do the next one for you. Go.',
+    'Done. That slip dress is going to hang just right. Next.',
+    'Done. Grit now, glow later. Next exercise.',
   ],
 
   // After the very last set of the whole workout: a nudge to go stretch
@@ -161,6 +167,7 @@ const PHRASES = {
     'Last set of {exercise}. Full range, every rep. Half reps build half the shape.',
     'One more set. That pencil skirt is going to fit like it was made for you.',
     'One set left. A fitted dress shows everything you build here. Earn it.',
+    'Last set. Strong thighs are built in the last set, not the first. Push.',
   ],
 
   // Lower body: when a leg or glute exercise is done
@@ -190,6 +197,11 @@ const PHRASES = {
     'Done. Strong legs, pretty legs. Same thing. Keep going.',
     'Done. Strong thighs, strong hips, shape coming. Keep moving.',
     '{exercise} done. That\'s how you fill out a dress. Next.',
+    'Done. Firm, strong thighs that look amazing in a short dress. Keep going.',
+    '{exercise} done. Your thighs did exactly what you asked of them. Next.',
+    'Done. Thighs that carry you up every staircase and look stunning doing it. Next.',
+    'Done. You\'re filling out that skirt a little more every week. Next.',
+    '{exercise} done. Your hips and thighs are coming in strong. Keep going.',
   ],
 
   // Lower body: after a workout that included leg or glute exercises
@@ -212,5 +224,7 @@ const PHRASES = {
     'Good girl. Short skirts and summer dresses, here you come.',
     'Every leg day adds a little more shape. So proud of today.',
     'Strong legs, soft heart. Lovely work today, girl.',
+    'Good girl. Your thighs worked hard today. They\'ll come back stronger.',
+    'Good girl. Those thighs are going to look stunning in a summer dress.',
   ],
 };
