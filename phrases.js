@@ -84,6 +84,15 @@ const PHRASES = {
     'That\'s everything. Stretch now so you come back stronger next time.',
     'Lifting\'s over. Stretching isn\'t optional. Go.',
     'That\'s the last set. Good girls cool down. Stretch.',
+    'Weights down, girl. Now stretch.',
+    'Every set done. A cat never leaves without a long stretch. Neither do you.',
+    'That\'s the last set. Don\'t you dare skip the cooldown.',
+    'All sets done. Stretch now, glow later.',
+    'Last set done. Strong is half of it. Supple is the other half. Stretch.',
+    'Good girl. Now go stretch.',
+    'Done with the hard part. Now the stretch, no excuses.',
+    'Workout\'s not over, girl. The stretch still counts.',
+    'Every set done. Pretty posture starts with a proper stretch.',
   ],
 
   // When the whole workout is finished
