@@ -26,6 +26,7 @@ function defaultState() {
     stretchStart: null, // timestamp (ms) when the cooldown stretch stopwatch started
     stretchShown: null, // ms shown on the stopped stopwatch (null = hidden)
     motivation: true, // show motivational phrases
+    keepAwake: true, // keep the screen on while the app is open
     repRange: [8, 13], // app-wide rep range for progression suggestions
     goals: { month: null, year: null }, // workout goals (counts)
   };
@@ -834,6 +835,24 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && state.restEnd) renderRest();
 });
 
+/* ---------- Keep the screen on ----------
+   Uses the Screen Wake Lock API while the app is open and visible. The phone
+   releases the lock whenever the app goes to the background, so it is asked for
+   again each time the app comes back. Where it isn't supported, nothing happens. */
+let wakeLock = null;
+async function updateWakeLock() {
+  const want = state.keepAwake && !document.hidden;
+  if (!want) { if (wakeLock) { const l = wakeLock; wakeLock = null; l.release().catch(() => {}); } return; }
+  if (wakeLock || !('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch { wakeLock = null; } // e.g. low battery mode, or not allowed here
+}
+document.addEventListener('visibilitychange', updateWakeLock);
+// Some browsers only allow it after a tap, so try again on the first touches too.
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (!wakeLock) updateWakeLock(); }, { passive: true }));
+
 /* ---------- Templates ---------- */
 // The template being edited. It's saved with your data as you go, so closing the
 // editor by accident (a tap outside, a swipe) never loses it.
@@ -1585,6 +1604,11 @@ function openSettings() {
       <input type="checkbox" id="motivation" ${state.motivation ? 'checked' : ''} style="width:auto;margin:0" />
       Show motivational messages
     </label>
+    <div class="label">Screen</div>
+    <label class="row small" style="cursor:pointer">
+      <input type="checkbox" id="keep-awake" ${state.keepAwake ? 'checked' : ''} style="width:auto;margin:0" />
+      Keep the screen on while the app is open
+    </label>
     <div class="label">Appearance</div>
     <div class="theme-grid">${THEMES.map(t => `<button class="theme-opt ${state.theme === t.id ? 'active' : ''}" data-act="theme" data-v="${t.id}" aria-pressed="${state.theme === t.id}">
       <span class="swatch" style="background:${t.bg};--sw-accent:${t.accent}"></span>${t.name}</button>`).join('')}</div>
@@ -1603,6 +1627,7 @@ function openSettings() {
   `, sheet => {
     $('#auto-rest', sheet).addEventListener('change', e => { state.autoRest = e.target.checked; save(); });
     $('#motivation', sheet).addEventListener('change', e => { state.motivation = e.target.checked; save(); });
+    $('#keep-awake', sheet).addEventListener('change', e => { state.keepAwake = e.target.checked; save(); updateWakeLock(); });
     const saveRange = () => {
       const lo = parseInt($('#rep-lo', sheet).value, 10), hi = parseInt($('#rep-hi', sheet).value, 10);
       if (lo >= 1 && hi > lo && hi <= 50) { state.repRange = [lo, hi]; save(); if (tab === 'train') render(); }
@@ -1963,6 +1988,7 @@ applyTheme();
 render();
 renderRest();
 renderStretch();
+updateWakeLock();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
