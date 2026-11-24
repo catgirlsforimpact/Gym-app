@@ -25,7 +25,7 @@ function defaultState() {
     restEnd: null,  // timestamp (ms) when current rest ends
     stretchStart: null, // timestamp (ms) when the cooldown stretch stopwatch started
     stretchShown: null, // ms shown on the stopped stopwatch (null = hidden)
-    motivation: true, // show motivational phrases
+    motivation: false, // show motivational phrases (off until turned on in Settings)
     keepAwake: true, // keep the screen on while the app is open
     repRange: [8, 13], // app-wide rep range for progression suggestions
     goals: { month: null, year: null }, // workout goals (counts)
